@@ -36,6 +36,10 @@ public class SwerveModule implements Sendable {
 
     private Rotation2d actualAngle = new Rotation2d();
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     private SwerveModule(Builder cfg) {
         this.driveMotor = cfg.driveMotor.get().build();
         this.pivotMotor = cfg.pivotMotor.get().build();

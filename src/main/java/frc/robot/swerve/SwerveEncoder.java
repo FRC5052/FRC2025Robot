@@ -43,7 +43,7 @@ public abstract class SwerveEncoder {
         }
     }
 
-    public static SwerveEncoderBuilder getBuilder(SwerveEncoderType type) {
+    public static final SwerveEncoderBuilder getBuilder(SwerveEncoderType type) {
         switch (type) {
             case kCANCoder:
                 return new CANCoderSwerveEncoder.Builder();
@@ -52,7 +52,7 @@ public abstract class SwerveEncoder {
         }
     }
 
-    public static SwerveEncoderBuilder builderFromJSON(JsonNode json) {
+    public static final SwerveEncoderBuilder builderFromJSON(JsonNode json) {
         var builder = getBuilder(SwerveEncoderType.fromString(json.get("type").asText()));
         builder.fromJSON(json);
         return builder;

@@ -17,11 +17,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
@@ -32,6 +35,8 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.path.PathPlannerTrajectory;
 import com.pathplanner.lib.util.PPLibTelemetry;
 import com.pathplanner.lib.util.PathPlannerLogging;
+import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CameraServerJNI.TelemetryKind;
@@ -40,6 +45,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.Timer;
@@ -50,14 +56,22 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.swerve.SwerveDrive.HeadingControlMode;
+import frc.robot.swerve.SwerveEncoder.CANCoderSwerveEncoder;
+import frc.robot.swerve.SwerveModule;
+import frc.robot.swerve.SwerveMotor;
+import frc.robot.swerve.SwerveMotor.SparkMaxSwerveMotor;
+import frc.robot.swerve.SwerveMotor.SwerveMotorType;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -70,15 +84,15 @@ public class RobotContainer {
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
 
   public final SwerveDriveSubsystem m_swerveDriveSubsystem;
-  public final AddressableLEDSubsystem m_addressableLEDSubsystem;
-  public final ColorSensorSubsystem m_colorSensorSubsystem;
+  // public final AddressableLEDSubsystem m_addressableLEDSubsystem;
+  // public final ColorSensorSubsystem m_colorSensorSubsystem;
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandGenericHID m_driverController =
       new CommandGenericHID(OperatorConstants.kDriverControllerPort);
 
-  private final CommandXboxController m_secondaryController =
-      new CommandXboxController(1);
+  // private final CommandXboxController m_secondaryController =
+  //     new CommandXboxController(1);
 
   private static RobotContainer instance;
 
@@ -98,8 +112,6 @@ public class RobotContainer {
       () -> this.m_driverController.getRawAxis(0), 
       () -> -this.m_driverController.getRawAxis(2)
       );
-    this.m_addressableLEDSubsystem = new AddressableLEDSubsystem(OperatorConstants.kLEDPort,OperatorConstants.kLEDLength);
-    this.m_colorSensorSubsystem = new ColorSensorSubsystem();
 
     this.autoChooser = AutoBuilder.buildAutoChooser();
 
@@ -120,6 +132,7 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
+    
     // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
@@ -136,9 +149,6 @@ public class RobotContainer {
         if (DriverStation.isAutonomousEnabled()) return;
       }
     };
-    
-
-    m_secondaryController.a().onTrue(new InstantCommand(() -> m_colorSensorSubsystem.getMatchedColor()));
 
     secondControllerCommand.setName("Teleop Intake");
 

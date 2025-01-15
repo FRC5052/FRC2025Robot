@@ -63,6 +63,10 @@ public class SwerveDrive implements Sendable {
     private final SwerveModulePosition[] wheelDeltaPositions;
     private Optional<PowerDistribution> powerDistribution = Optional.empty();
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     // public static final Struct<SwerveDrive> struct = new Struct<SwerveDrive>() {
         
     // };

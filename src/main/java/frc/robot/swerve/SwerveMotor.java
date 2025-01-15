@@ -31,7 +31,7 @@ public abstract class SwerveMotor {
         }
     }
 
-    public static SwerveMotorBuilder getBuilder(SwerveMotorType type) {
+    public static final SwerveMotorBuilder getBuilder(SwerveMotorType type) {
         switch (type) {
             case kSparkMax:
                 return new SparkMaxSwerveMotor.Builder();

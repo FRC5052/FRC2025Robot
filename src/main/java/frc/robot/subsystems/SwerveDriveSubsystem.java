@@ -18,26 +18,19 @@ import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.AprilTags;
 import frc.robot.Limelight;
 import frc.robot.swerve.SwerveDrive;
-import frc.robot.swerve.SwerveEncoder;
-import frc.robot.swerve.SwerveIMU;
 import frc.robot.swerve.SwerveModule;
-import frc.robot.swerve.SwerveMotor;
 import frc.robot.swerve.SwerveDrive.HeadingControlMode;
 import frc.robot.swerve.SwerveMotor.SparkMaxSwerveMotor;
 import frc.robot.swerve.SwerveEncoder.CANCoderSwerveEncoder;
@@ -59,7 +52,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     this.yAxis = yAxis;
     this.rAxis = rAxis;
 
-    SwerveModule.Builder module_cfg = new SwerveModule.Builder()
+    SwerveModule.Builder module_cfg = SwerveModule.builder()
       .withDriveGearRatio(6.75)
       .withPivotGearRatio(12.8)
       .withWheelDiameter(0.1016, Meters);
@@ -71,29 +64,29 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
     CANCoderSwerveEncoder.Builder encoder_cfg = new CANCoderSwerveEncoder.Builder();
 
-    this.swerveDrive = new SwerveDrive.Builder()
+    this.swerveDrive = SwerveDrive.builder()
       .withIMU(new NavXSwerveIMU.Builder().withPort())
       .withModules(new SwerveModule.Builder[] {
         module_cfg.clone() // Front Right
-          .withOffset(new Translation2d(23.5, -23.5), Inches)
+          .withOffset(new Translation2d(9, -9), Inches)
           .withDriveMotor(motor_cfg.clone().withID(10))
           .withPivotMotor(motor_cfg.clone().withID(11))
-          .withAbsoluteEncoder(encoder_cfg.clone().withID(12).withOffset(-240.64, Degrees)),
+          .withAbsoluteEncoder(encoder_cfg.clone().withID(12).withOffset(59.50, Degrees)),
         module_cfg.clone() // Front Left
-          .withOffset(new Translation2d(23.5, 23.5), Inches)
-          .withDriveMotor(motor_cfg.clone().withID(1))
-          .withPivotMotor(motor_cfg.clone().withID(2))
-          .withAbsoluteEncoder(encoder_cfg.clone().withID(3).withOffset(-243.28, Degrees)),
-        module_cfg.clone() // Back Right
-          .withOffset(new Translation2d(-23.5, -23.5), Inches)
+          .withOffset(new Translation2d(9, 9), Inches)
           .withDriveMotor(motor_cfg.clone().withID(7))
           .withPivotMotor(motor_cfg.clone().withID(8))
-          .withAbsoluteEncoder(encoder_cfg.clone().withID(9).withOffset(36.29, Degrees)),
-        module_cfg.clone() // Back Left
-          .withOffset(new Translation2d(-23.5, 23.5), Inches)
+          .withAbsoluteEncoder(encoder_cfg.clone().withID(9).withOffset(-31.37, Degrees)),
+        module_cfg.clone() // Back Right
+          .withOffset(new Translation2d(-9, -9), Inches)
           .withDriveMotor(motor_cfg.clone().withID(4))
           .withPivotMotor(motor_cfg.clone().withID(5))
-          .withAbsoluteEncoder(encoder_cfg.clone().withID(6).withOffset(-34.1, Degrees))
+          .withAbsoluteEncoder(encoder_cfg.clone().withID(6).withOffset(54.22, Degrees)),
+        module_cfg.clone() // Back Left
+          .withOffset(new Translation2d(-9, 9), Inches)
+          .withDriveMotor(motor_cfg.clone().withID(1))
+          .withPivotMotor(motor_cfg.clone().withID(2))
+          .withAbsoluteEncoder(encoder_cfg.clone().withID(3).withOffset(-151.26, Degrees))
       })
       .withHeadingPID(new PIDConstants(2.0, 0.0, 0.2))
       .withModuleDrivePID(new PIDConstants(0.5, 0.0, 0.0))

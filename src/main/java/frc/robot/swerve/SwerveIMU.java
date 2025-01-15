@@ -32,7 +32,7 @@ public abstract class SwerveIMU {
         }
     }
 
-    public static SwerveIMUBuilder getBuilder(SwerveIMUType type) {
+    public static final SwerveIMUBuilder getBuilder(SwerveIMUType type) {
         switch (type) {
             case kNavX:
                 return new NavXSwerveIMU.Builder();
@@ -41,7 +41,7 @@ public abstract class SwerveIMU {
         }
     }
 
-    public static SwerveIMUBuilder builderFromJSON(JsonNode json) {
+    public static final SwerveIMUBuilder builderFromJSON(JsonNode json) {
         var builder = getBuilder(SwerveIMUType.fromString(json.get("type").asText()));
         builder.fromJSON(json);
         return builder;
