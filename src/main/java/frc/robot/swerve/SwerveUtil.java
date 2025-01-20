@@ -1,7 +1,14 @@
 package frc.robot.swerve;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.units.*;
+import edu.wpi.first.units.AngleUnit;
+import edu.wpi.first.units.AngularAccelerationUnit;
+import edu.wpi.first.units.AngularVelocityUnit;
+import edu.wpi.first.units.DistanceUnit;
+import edu.wpi.first.units.LinearAccelerationUnit;
+import edu.wpi.first.units.LinearVelocityUnit;
+import edu.wpi.first.units.TimeUnit;
+import edu.wpi.first.units.measure.*;
 import static edu.wpi.first.units.Units.*;
 
 public final class SwerveUtil {
@@ -12,7 +19,7 @@ public final class SwerveUtil {
         return result;
     }
 
-    static Distance distanceFromName(String name) {
+    static DistanceUnit distanceFromName(String name) {
         switch (name.toLowerCase()) {
             case "m":
                 return Meters;
@@ -29,7 +36,7 @@ public final class SwerveUtil {
         }
     }
 
-    static Velocity<Distance> velocityFromName(String name) {
+    static LinearVelocityUnit velocityFromName(String name) {
         switch (name.toLowerCase()) {
             case "m/s":
                 return MetersPerSecond;
@@ -42,7 +49,7 @@ public final class SwerveUtil {
         }
     }
 
-    static Velocity<Velocity<Distance>> accelFromName(String name) {
+    static LinearAccelerationUnit accelFromName(String name) {
         switch (name.toLowerCase()) {
             case "m/s2":
                 return MetersPerSecondPerSecond;
@@ -57,7 +64,7 @@ public final class SwerveUtil {
         }
     }
 
-    static Angle angleFromName(String name) {
+    static AngleUnit angleFromName(String name) {
         switch (name.toLowerCase()) {
             case "rad":
                 return Radians;
@@ -71,7 +78,7 @@ public final class SwerveUtil {
         }
     }
 
-    static Velocity<Angle> angularVelocityFromName(String name) {
+    static AngularVelocityUnit angularVelocityFromName(String name) {
         switch (name.toLowerCase()) {
             case "rad/s":
                 return RadiansPerSecond;
@@ -87,7 +94,7 @@ public final class SwerveUtil {
         }
     }
 
-    static Velocity<Velocity<Angle>> angularAccelFromName(String name) {
+    static AngularAccelerationUnit angularAccelFromName(String name) {
         switch (name.toLowerCase()) {
             case "rad/s2":
                 return RadiansPerSecond.per(Second);
@@ -101,7 +108,7 @@ public final class SwerveUtil {
         }
     }
 
-    static Time timeFromName(String name) {
+    static TimeUnit timeFromName(String name) {
         switch (name.toLowerCase()) {
             case "s":
                 return Seconds;

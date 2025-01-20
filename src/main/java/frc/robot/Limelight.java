@@ -7,9 +7,12 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.AngleUnit;
+import edu.wpi.first.units.AngularVelocityUnit;
+import edu.wpi.first.units.DistanceUnit;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Velocity;
 
 import static edu.wpi.first.units.Units.*;
 
@@ -37,7 +40,7 @@ public class Limelight {
         return hasTarget() ? OptionalDouble.of(limelightTable.getEntry("tx").getDouble(0.0)) : OptionalDouble.empty(); 
     }
 
-    public static Optional<Pose2d> getFieldCentricRobotPose(Distance distanceUnit, boolean useMegaTag2) {
+    public static Optional<Pose2d> getFieldCentricRobotPose(DistanceUnit distanceUnit, boolean useMegaTag2) {
         init();
         if (hasTarget()) {
             double[] poseArray = useMegaTag2 ? limelightTable.getEntry("botpose_orb_wpiblue").getDoubleArray(new double[6]) : limelightTable.getEntry("botpose_wpiblue").getDoubleArray(new double[6]);
@@ -47,7 +50,7 @@ public class Limelight {
         }
     }
 
-    public static void setRobotYaw(double angle, double angularVelocity, Angle angleUnit, Velocity<Angle> angularVelocityUnit) {
+    public static void setRobotYaw(double angle, double angularVelocity, AngleUnit angleUnit, AngularVelocityUnit angularVelocityUnit) {
         init();
         limelightTable.getEntry("robot_orientation_set").setDoubleArray(new double[] {
             Degrees.convertFrom(angle, angleUnit),

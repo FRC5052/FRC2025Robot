@@ -12,14 +12,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.config.PIDConstants;
 
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.units.*;
 
 public class SwerveModule implements Sendable {
     private final SwerveMotor driveMotor, pivotMotor;
@@ -98,7 +99,7 @@ public class SwerveModule implements Sendable {
      * @param unit The unit of length to use to convert the value.
      * @return The diameter of the swerve module's wheel, in the given units.
      */
-    public double getWheelDiameter(Distance unit) {
+    public double getWheelDiameter(DistanceUnit unit) {
         return unit.convertFrom(this.wheelDiameter, Meters);
     }
 
@@ -107,7 +108,7 @@ public class SwerveModule implements Sendable {
      * @param unit The unit of length to use to convert the value.
      * @return The radius of the swerve module's wheel, in the given units.
      */
-    public double getWheelRadius(Distance unit) {
+    public double getWheelRadius(DistanceUnit unit) {
         return this.getWheelDiameter(unit) / 2.0;
     }
 
@@ -116,7 +117,7 @@ public class SwerveModule implements Sendable {
      * @param unit The unit of length to use to convert the value.
      * @return The circumfrence of the swerve module's wheel, in the given units.
      */
-    public double getWheelCircumference(Distance unit) {
+    public double getWheelCircumference(DistanceUnit unit) {
         return this.getWheelDiameter(unit) * Math.PI;
     }
 
@@ -176,7 +177,7 @@ public class SwerveModule implements Sendable {
      * @param unit The unit of velocity to use to convert the value.
      * @return The speed setpoint of this swerve module, in the given units.
      */
-    public double getStateSpeed(Velocity<Distance> unit) {
+    public double getStateSpeed(LinearVelocityUnit unit) {
         return unit.convertFrom(this.state.speedMetersPerSecond, MetersPerSecond);
     }
 
@@ -193,7 +194,7 @@ public class SwerveModule implements Sendable {
      * @param unit The unit of velocity to use to convert the value.
      * @return The angle setpoint of this swerve module, in the given units.
      */
-    public double getStateAngle(Angle unit) {
+    public double getStateAngle(AngleUnit unit) {
         return unit.convertFrom(this.state.angle.getRadians(), Radians);
     }
 
@@ -210,7 +211,7 @@ public class SwerveModule implements Sendable {
      * @param unit The unit of angle to use to convert the value.
      * @return The measured angle of this swerve module, in the given units.
      */
-    public double getActualAngle(Angle unit) {
+    public double getActualAngle(AngleUnit unit) {
         return unit.convertFrom(this.actualAngle.getRadians(), Radians);
     }
     
@@ -219,7 +220,7 @@ public class SwerveModule implements Sendable {
      * @param unit The unit of angular velocity to use to convert the value.
      * @return The measured angular velocity of this swerve module, in the given units.
      */
-    public double getMeasuredAngularVelocity(Velocity<Angle> unit) {
+    public double getMeasuredAngularVelocity(AngularVelocityUnit unit) {
         return MathUtil.applyDeadband(this.driveMotor.getVelocity(unit) / this.driveGearRatio, 1e-3);
     }
 
@@ -228,8 +229,8 @@ public class SwerveModule implements Sendable {
      * @param unit The unit of velocity to use to convert the value.
      * @return The measured velocity of this swerve module, in the given units.
      */
-    public double getMeasuredVelocity(Velocity<Distance> unit) {
-        return this.getMeasuredAngularVelocity(RadiansPerSecond) * this.getWheelRadius(unit.getUnit());
+    public double getMeasuredVelocity(LinearVelocityUnit unit) {
+        return this.getMeasuredAngularVelocity(RadiansPerSecond) * this.getWheelRadius(unit.numerator());
     }
 
     /**
@@ -245,7 +246,7 @@ public class SwerveModule implements Sendable {
      * @param unit The unit of distance to use to convert the value.
      * @return The total distance this swerve module's wheel has traveled, in the given units.
      */
-    public double getTotalDistance(Distance unit) {
+    public double getTotalDistance(DistanceUnit unit) {
         return -(this.driveMotor.getPosition(Radians) / this.driveGearRatio) * this.getWheelRadius(unit);
         // return this.driveMotor.getPosition() / (2*Math.PI);
     }
@@ -331,7 +332,7 @@ public class SwerveModule implements Sendable {
             }
             if (json.has("offset") && json.get("offset").isObject()) {
                 JsonNode json_inner = json.get("offset");
-                Distance unit = Meters;
+                DistanceUnit unit = Meters;
                 if (json_inner.has("unit") && json_inner.get("unit").isTextual()) {
                     unit = Objects.requireNonNullElse(SwerveUtil.distanceFromName(json_inner.get("unit").textValue()), unit);
                 }
@@ -342,7 +343,7 @@ public class SwerveModule implements Sendable {
 
             if (json.has("wheelDiameter") && (json.get("wheelDiameter").isObject() || json.get("wheelDiameter").isDouble())) {
                 JsonNode json_inner = json.get("wheelDiameter");
-                Distance unit = Meters;
+                DistanceUnit unit = Meters;
                 if (json_inner.has("unit") && json_inner.get("unit").isTextual() && json_inner.has("value") && json_inner.get("value").isDouble()) {
                     unit = Objects.requireNonNullElse(SwerveUtil.distanceFromName(json_inner.get("unit").textValue()), unit);
                     this.withWheelDiameter(json_inner.get("value").doubleValue(), unit);
@@ -380,21 +381,21 @@ public class SwerveModule implements Sendable {
             return this;
         }
 
-        public Builder withOffset(double x, double y, Distance unit) {
+        public Builder withOffset(double x, double y, DistanceUnit unit) {
             this.offset = new Translation2d(unit.toBaseUnits(x), unit.toBaseUnits(y));
             return this;
         }
 
-        public Builder withOffset(Translation2d position, Distance unit) {
+        public Builder withOffset(Translation2d position, DistanceUnit unit) {
             return this.withOffset(position.getX(), position.getY(), unit);
         }
 
-        public Builder withWheelDiameter(double diameter, Distance unit) {
+        public Builder withWheelDiameter(double diameter, DistanceUnit unit) {
             this.wheelDiameter = unit.toBaseUnits(diameter);
             return this;
         }
 
-        public Builder withWheelDiameter(Measure<Distance> diameter) {
+        public Builder withWheelDiameter(Measure<DistanceUnit> diameter) {
             this.wheelDiameter = diameter.baseUnitMagnitude();
             return this;
         }

@@ -1,14 +1,16 @@
 package frc.robot.swerve;
 
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.revrobotics.CANSparkBase.IdleMode;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import edu.wpi.first.units.*;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -19,12 +21,13 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.MutableMeasure;
-import edu.wpi.first.units.Units;
-import static edu.wpi.first.units.Units.Degrees;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.units.Units.*;
+import edu.wpi.first.units.measure.Velocity;
 
 /** An interface for encoders used on swerve drive modules.
  * 
@@ -70,25 +73,25 @@ public abstract class SwerveEncoder {
      * @param unit The angle unit to convert the measurement into.
      * @return The absolute position (or relative if this encoder doesn't support it) reported by this encoder.
     */
-    public abstract double getAbsolutePosition(Angle unit);
+    public abstract double getAbsolutePosition(AngleUnit unit);
 
     /** Returns the relative position of this encoder. 
      * @param unit The angle unit to convert the measurement into.
      * @return The relative position reported by this encoder.
     */
-    public abstract double getPosition(Angle unit);
+    public abstract double getPosition(AngleUnit unit);
 
     /** Returns the velocity reported by this encoder. 
      * @param unit The angular velocity unit to convert the measurement into.
      * @return The angular velocity reported by this encoder.
     */
-    public abstract double getVelocity(Velocity<Angle> unit);
+    public abstract double getVelocity(AngularVelocityUnit unit);
 
     /** Sets the relative position that this encoder considers zero.
      * @param position The angle to set this encoder's zero to.
      * @param unit The angle unit to convert the measurement from.
     */
-    public abstract void setPosition(double position, Angle unit);
+    public abstract void setPosition(double position, AngleUnit unit);
 
     /** Sets the relative position of this encoder to match up with the absolute position, if it supports absolute position. Otherwise, nothing happens. */
     public void setPositionToAbsolute() {
@@ -99,13 +102,13 @@ public abstract class SwerveEncoder {
      * @param offset The angle to offset the absolute position reported by this encoder by.
      * @param unit The angle unit to convert the measurement from.
     */
-    public abstract void setOffset(double offset, Angle unit);
+    public abstract void setOffset(double offset, AngleUnit unit);
 
     /** Returns the absolute offset of this encoder. 
      * @param unit The angle unit to convert the measurement into.
      * @return The angle that the absolute position reported by this encoder is offset by.
     */
-    public abstract double getOffset(Angle unit);
+    public abstract double getOffset(AngleUnit unit);
 
     /** Sets whether the output of this encoder is to be reversed. 
      * @param reverse Whether the encoder should measure clockwise as positive instead of negative.
@@ -113,7 +116,7 @@ public abstract class SwerveEncoder {
     public abstract void setReversed(boolean reverse);
 
     /** Returns whether this encoder supports absolute positioning. 
-     * @return Whether the encoder will report unique values for {@link #getAbsolutePosition(Angle)}.
+     * @return Whether the encoder will report unique values for {@link #getAbsolutePosition(AngleUnit)}.
     */
     public abstract boolean isAbsolute();
 
@@ -128,10 +131,9 @@ public abstract class SwerveEncoder {
         private CANcoder encoder;
         private CANcoderConfiguration config;
 
-        private CANCoderSwerveEncoder(int id, boolean reverse, Measure<Angle> offset) {
+        private CANCoderSwerveEncoder(int id, boolean reverse, Measure<AngleUnit> offset) {
             this.config = new CANcoderConfiguration();
-
-            this.config.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf; // Sets output to signed
+            this.config.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0.5; // Sets output to signed
             this.config.MagnetSensor.MagnetOffset = offset.in(Rotations);
             this.config.MagnetSensor.SensorDirection = reverse ? SensorDirectionValue.Clockwise_Positive : SensorDirectionValue.CounterClockwise_Positive;
             
@@ -140,27 +142,27 @@ public abstract class SwerveEncoder {
         }
 
         @Override
-        public double getAbsolutePosition(Angle unit) {
+        public double getAbsolutePosition(AngleUnit unit) {
             return unit.convertFrom(this.encoder.getAbsolutePosition().getValueAsDouble(), Rotations);
         }
 
         @Override
-        public double getPosition(Angle unit) {
+        public double getPosition(AngleUnit unit) {
             return unit.convertFrom(this.encoder.getPosition().getValueAsDouble(), Rotations);
         }
 
         @Override
-        public double getVelocity(Velocity<Angle> unit) {
+        public double getVelocity(AngularVelocityUnit unit) {
             return unit.convertFrom(this.encoder.getVelocity().getValueAsDouble(), RotationsPerSecond);
         }
 
         @Override
-        public void setPosition(double position, Angle unit) {
+        public void setPosition(double position, AngleUnit unit) {
             this.encoder.setPosition(Rotations.convertFrom(position, unit));
         }
 
         @Override
-        public void setOffset(double offset, Angle unit) {
+        public void setOffset(double offset, AngleUnit unit) {
             this.config.MagnetSensor.MagnetOffset = Rotations.convertFrom(offset, unit);
             this.encoder.getConfigurator().apply(this.config);
         }
@@ -172,7 +174,7 @@ public abstract class SwerveEncoder {
         }
 
         @Override
-        public double getOffset(Angle unit) {
+        public double getOffset(AngleUnit unit) {
             return unit.convertFrom(this.config.MagnetSensor.MagnetOffset, Rotations);
         }
 
@@ -189,7 +191,7 @@ public abstract class SwerveEncoder {
         public static class Builder implements SwerveEncoderBuilder {
             private OptionalInt id = OptionalInt.empty();
             private boolean reversed = false;
-            private MutableMeasure<Angle> offset = MutableMeasure.zero(Radians);
+            private MutAngle offset = Radians.mutable(0);
 
             @Override
             public Builder clone() {
@@ -210,13 +212,13 @@ public abstract class SwerveEncoder {
                 return this;
             }
 
-            public Builder withOffset(double offset, Angle unit) {
+            public Builder withOffset(double offset, AngleUnit unit) {
                 this.offset.mut_replace(offset, unit);
                 return this;
             }
 
-            public Builder withOffset(Measure<Angle> offset) {
-                this.offset.mut_replace(offset);
+            public Builder withOffset(Measure<AngleUnit> offset) {
+                this.offset.mut_replace(offset.magnitude(), offset.unit());
                 return this;
             }
 
@@ -232,7 +234,7 @@ public abstract class SwerveEncoder {
                 
                 if (json.has("offset") && (json.get("offset").isObject() || json.get("offset").isDouble())) {
                     JsonNode json_inner = json.get("offset");
-                    Angle unit = Degrees;
+                    AngleUnit unit = Degrees;
                     if (json_inner.has("unit") && json_inner.get("unit").isTextual() && json_inner.has("value") && json_inner.get("value").isDouble()) {
                         unit = Objects.requireNonNullElse(SwerveUtil.angleFromName(json_inner.get("unit").textValue()), unit);
                         this.withOffset(json_inner.get("value").doubleValue(), unit);

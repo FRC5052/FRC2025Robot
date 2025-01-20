@@ -6,17 +6,20 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.kauailabs.navx.frc.AHRS;
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.geometry.*;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.MutableMeasure;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.SerialPort;
+import edu.wpi.first.units.*;
 
 public abstract class SwerveIMU {
     public enum SwerveIMUType {
@@ -58,14 +61,14 @@ public abstract class SwerveIMU {
      * @param unit The unit of angle to convert the measurement into.
      * @return The measured heading, in the given unit.
      */
-    public abstract double getHeading(Angle unit);
+    public abstract double getHeading(AngleUnit unit);
 
     /** 
      * Returns the heading of this IMU in the given unit, without heading correction. 
      * @param unit The unit of angle to convert the measurement into.
      * @return The measured heading, in the given unit.
      */
-    public abstract double getRawHeading(Angle unit);
+    public abstract double getRawHeading(AngleUnit unit);
 
     /** 
      * Returns the heading of this IMU relative to the planet's magnetic field (if present), in the given unit. 
@@ -73,14 +76,14 @@ public abstract class SwerveIMU {
      * @return The measured heading, in the given unit.
      * @apiNote On some IMU implementations, the IMU has to be calibrated manually for this function to work correctly.
      */
-    public abstract double getCompassHeading(Angle unit);
+    public abstract double getCompassHeading(AngleUnit unit);
 
     /** 
      * Returns the measured 3D acceleration of this IMU.
      * @param unit The unit of acceleration to convert the measurement into.
      * @return The Translation3d object representing the 3D acceleration this IMU is reporting.
      */
-    public abstract Translation3d getWorldAccel(Velocity<Velocity<Distance>> unit);
+    public abstract Translation3d getWorldAccel(LinearAccelerationUnit unit);
 
     /** 
      * Calibrates this IMU.
@@ -90,7 +93,7 @@ public abstract class SwerveIMU {
 
     /**
      * Sets the heading offset to the raw heading reported by this IMU. 
-     * The heading returned by {@link #getHeading(Angle)} is guaranteed to be zero after this call.
+     * The heading returned by {@link #getHeading(AngleUnit)} is guaranteed to be zero after this call.
      */
     public abstract void zeroHeading();
 
@@ -99,14 +102,14 @@ public abstract class SwerveIMU {
      * @param unit The unit of angle to convert the value into.
      * @return The configured heading offset, in the given units.
      */
-    public abstract double getHeadingOffset(Angle unit);
+    public abstract double getHeadingOffset(AngleUnit unit);
     
     /**
      * Sets this IMU's configured heading offset.
      * @param offset The new heading offset value, in the given units
      * @param unit The unit of angle to convert the value into.
      */
-    public abstract void setHeadingOffset(double offset, Angle unit);
+    public abstract void setHeadingOffset(double offset, AngleUnit unit);
 
     public static interface SwerveIMUBuilder {
         public SwerveIMUBuilder clone();
@@ -117,23 +120,29 @@ public abstract class SwerveIMU {
     public static class NavXSwerveIMU extends SwerveIMU {
         private AHRS navX;
 
-        private NavXSwerveIMU(Measure<Angle> offset) {
-            this.navX = new AHRS();
+        private NavXSwerveIMU(Measure<AngleUnit> offset) {
+            this.navX = new AHRS(NavXComType.kMXP_SPI);
             this.setHeadingOffset(offset.magnitude(), offset.unit());
         }
 
-        private NavXSwerveIMU(SPI.Port port, Measure<Angle> offset) {
-            this.navX = new AHRS(port);
+        private NavXSwerveIMU(SPI.Port port, Measure<AngleUnit> offset) {
+            this.navX = new AHRS(NavXComType.kMXP_SPI);
             this.setHeadingOffset(offset.magnitude(), offset.unit());
         }
 
-        private NavXSwerveIMU(I2C.Port port, Measure<Angle> offset) {
-            this.navX = new AHRS(port);
+        private NavXSwerveIMU(I2C.Port port, Measure<AngleUnit> offset) {
+            this.navX = new AHRS(NavXComType.kI2C);
             this.setHeadingOffset(offset.magnitude(), offset.unit());
         }
 
-        private NavXSwerveIMU(SerialPort.Port port, Measure<Angle> offset) {
-            this.navX = new AHRS(port);
+        private NavXSwerveIMU(SerialPort.Port port, Measure<AngleUnit> offset) {
+            if(port.equals(SerialPort.Port.kUSB1)) {
+                this.navX = new AHRS(NavXComType.kUSB1);
+            } else if(port.equals(SerialPort.Port.kUSB2)) {
+                this.navX = new AHRS(NavXComType.kUSB2);
+            } else {
+                this.navX = new AHRS(NavXComType.kUSB1);
+            }
             this.setHeadingOffset(offset.magnitude(), offset.unit());
         }
 
@@ -148,22 +157,22 @@ public abstract class SwerveIMU {
         }
 
         @Override
-        public double getHeading(Angle unit) {
+        public double getHeading(AngleUnit unit) {
             return this.getRawHeading(unit) - this.getHeadingOffset(unit);
         }
 
         @Override
-        public double getRawHeading(Angle unit) {
+        public double getRawHeading(AngleUnit unit) {
             return unit.convertFrom(-(double)this.navX.getFusedHeading(), Degrees);
         }
 
         @Override
-        public double getCompassHeading(Angle unit) {
+        public double getCompassHeading(AngleUnit unit) {
             return unit.convertFrom(-(double)this.navX.getCompassHeading(), Degrees);
         }
 
         @Override
-        public Translation3d getWorldAccel(Velocity<Velocity<Distance>> unit) {
+        public Translation3d getWorldAccel(LinearAccelerationUnit unit) {
             return new Translation3d(
                 unit.convertFrom(this.navX.getWorldLinearAccelX(), Gs), 
                 unit.convertFrom(this.navX.getWorldLinearAccelY(), Gs), 
@@ -182,19 +191,19 @@ public abstract class SwerveIMU {
         }
 
         @Override
-        public double getHeadingOffset(Angle unit) {
+        public double getHeadingOffset(AngleUnit unit) {
             return unit.convertFrom(-this.navX.getAngleAdjustment(), Degrees);
         }
 
         @Override
-        public void setHeadingOffset(double offset, Angle unit) {
+        public void setHeadingOffset(double offset, AngleUnit unit) {
             this.navX.setAngleAdjustment(-Degrees.convertFrom(offset, unit));
         }
 
         public static class Builder implements SwerveIMUBuilder {
             private Optional<Object> port = Optional.empty();
             private PortType portType = PortType.SPI;
-            private MutableMeasure<Angle> offset = MutableMeasure.zero(Radians);
+            private MutAngle offset = Radians.mutable(0);
 
             @Override
             public Builder clone() {
@@ -228,13 +237,13 @@ public abstract class SwerveIMU {
                 return this;
             }
 
-            public Builder withOffset(double offset, Angle unit) {
+            public Builder withOffset(double offset, AngleUnit unit) {
                 this.offset.mut_replace(offset, unit);
                 return this;
             }
 
-            public Builder withOffset(Measure<Angle> offset) {
-                this.offset.mut_replace(offset);
+            public Builder withOffset(Measure<AngleUnit> offset) {
+                this.offset.mut_replace(offset.magnitude(), offset.unit());
                 return this;
             }
 
@@ -242,7 +251,7 @@ public abstract class SwerveIMU {
             public void fromJSON(JsonNode json) {
                 if (json.has("offset") && (json.get("offset").isObject() || json.get("offset").isDouble())) {
                     JsonNode json_inner = json.get("offset");
-                    Angle unit = Degrees;
+                    AngleUnit unit = Degrees;
                     if (json_inner.has("unit") && json_inner.get("unit").isTextual() && json_inner.has("value") && json_inner.get("value").isDouble()) {
                         unit = Objects.requireNonNullElse(SwerveUtil.angleFromName(json_inner.get("unit").textValue()), unit);
                         this.withOffset(json_inner.get("value").doubleValue(), unit);

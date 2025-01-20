@@ -6,15 +6,20 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkBase.IdleMode;
-import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig;
+import com.revrobotics.spark.config.SparkMaxConfig;
 
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Current;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.MutableMeasure;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.MutCurrent;
+import edu.wpi.first.units.measure.Velocity;
+import edu.wpi.first.units.*;
 
 public abstract class SwerveMotor {
 
@@ -58,7 +63,7 @@ public abstract class SwerveMotor {
      * @param unit The unit of angular velocity to convert the measurement into.
      * @return The maximum speed that this motor can achieve.
      */
-    public abstract double maxSpeed(Velocity<Angle> unit);
+    public abstract double maxSpeed(AngularVelocityUnit unit);
 
     /** Gets the normalized throttle of this motor. 
      * @return The normalized throttle that this motor reports, from -1 to 1.
@@ -84,25 +89,25 @@ public abstract class SwerveMotor {
      * @param unit The unit of current to convert the measurement into.
      * @return The amount of current that this motor is reporting to draw.
     */
-    public abstract double getCurrent(Current unit);
+    public abstract double getCurrent(CurrentUnit unit);
 
     /** Sets the motor's current limit to the given amp value. 
      * @param limit The new current limit to apply to this motor.
      * @param unit The unit of current to convert the limit into.
     */
-    public abstract void setCurrentLimit(double limit, Current unit);
+    public abstract void setCurrentLimit(double limit, CurrentUnit unit);
 
     /** Returns the current position reported by this motor since last being reset. 
      * @param unit The unit of angle to convert the measurement into.
      * @return The current position of the motor's shaft angle.
     */
-    public abstract double getPosition(Angle unit);
+    public abstract double getPosition(AngleUnit unit);
 
     /** Sets the position reported by this motor to the given value. 
      * @param position The new angle to set the motor's shaft position to.
      * @param unit The unit of angle to convert the position from.
     */
-    public abstract void setPosition(double position, Angle unit);
+    public abstract void setPosition(double position, AngleUnit unit);
 
     /** Resets the position reported by the motor to zero. */
     public void resetPosition() {
@@ -112,7 +117,7 @@ public abstract class SwerveMotor {
      * @param unit The unit of angular velocity to convert the measurement into.
      * @return The current angular velocity the motor's shaft is spinning at.
     */
-    public abstract double getVelocity(Velocity<Angle> unit);
+    public abstract double getVelocity(AngularVelocityUnit unit);
 
     public static interface SwerveMotorBuilder {
         public SwerveMotorBuilder clone();
@@ -121,14 +126,18 @@ public abstract class SwerveMotor {
     }
 
     public static class SparkMaxSwerveMotor extends SwerveMotor {
-        private CANSparkMax motor;
+        private SparkMax motor;
 
         private SparkMaxSwerveMotor(int id, boolean reversed, IdleMode idleMode, MotorType type) {
-            this.motor = new CANSparkMax(id, type);
-            this.motor.setInverted(reversed);
-            this.motor.setIdleMode(idleMode);
-            this.motor.getEncoder().setPositionConversionFactor(1);
-            this.motor.getEncoder().setVelocityConversionFactor(1);
+            this.motor = new SparkMax(id, type);
+            SparkMaxConfig config = new SparkMaxConfig();
+            config
+                .inverted(reversed)
+                .idleMode(idleMode);
+            config.encoder
+                .positionConversionFactor(1)
+                .velocityConversionFactor(1);
+            motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         }
 
         @Override
@@ -147,37 +156,40 @@ public abstract class SwerveMotor {
         }
 
         @Override
-        public void setCurrentLimit(double limit, Current unit) {
-            this.motor.setSmartCurrentLimit((int)Amps.convertFrom((double)limit, unit));
+        public void setCurrentLimit(double limit, CurrentUnit unit) {
+            SparkMaxConfig config = new SparkMaxConfig();
+            config
+                .smartCurrentLimit((int)Amps.convertFrom((double)limit, unit));
+            motor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
         }
 
         @Override
-        public double getPosition(Angle unit) {
+        public double getPosition(AngleUnit unit) {
             return unit.convertFrom(this.motor.getEncoder().getPosition(), Rotations);
         }
 
         @Override
-        public double getVelocity(Velocity<Angle> unit) {
+        public double getVelocity(AngularVelocityUnit unit) {
             return unit.convertFrom(this.motor.getEncoder().getVelocity(), RPM);
         }
 
         @Override
         public boolean isReversed() {
-            return this.motor.getEncoder().getInverted();
+            return this.motor.configAccessor.getInverted();
         }
 
         @Override
-        public double getCurrent(Current unit) {
+        public double getCurrent(CurrentUnit unit) {
             return unit.convertFrom(this.motor.getOutputCurrent(), Amps);
         }
 
         @Override
-        public void setPosition(double position, Angle unit) {
+        public void setPosition(double position, AngleUnit unit) {
             this.motor.getEncoder().setPosition(Rotations.convertFrom(position, unit));
         }
 
         @Override
-        public double maxSpeed(Velocity<Angle> unit) {
+        public double maxSpeed(AngularVelocityUnit unit) {
             return unit.convertFrom(5820, RPM);
         }
 
@@ -191,7 +203,7 @@ public abstract class SwerveMotor {
             private boolean reversed = false;
             private Optional<IdleMode> idleMode = Optional.empty();
             private Optional<MotorType> motorType = Optional.empty();
-            private Optional<MutableMeasure<Current>> currentLimit = Optional.empty();
+            private Optional<MutCurrent> currentLimit = Optional.empty();
 
             @Override
             public Builder clone() {
@@ -223,11 +235,11 @@ public abstract class SwerveMotor {
                 return this;
             }
 
-            public Builder withCurrentLimit(double current, Current unit) {
+            public Builder withCurrentLimit(double current, CurrentUnit unit) {
                 if (this.currentLimit.isEmpty()) {
-                    this.currentLimit = Optional.of(MutableMeasure.ofRelativeUnits(current, unit));
+                    this.currentLimit = Optional.of(new MutCurrent(current, unit.toBaseUnits(current), unit));
                 } else {
-                    this.currentLimit.ifPresent((MutableMeasure<Current> measure) -> measure.mut_replace(current, unit));
+                    this.currentLimit.ifPresent((MutCurrent measure) -> measure.mut_replace(current, unit));
                 }
                 return this;
             }
@@ -279,7 +291,7 @@ public abstract class SwerveMotor {
                     throw new IllegalStateException("MotorType field was empty");
                 }
                 var tmp = new SparkMaxSwerveMotor(this.id.getAsInt(), this.reversed, this.idleMode.get(), this.motorType.get());
-                this.currentLimit.ifPresent((MutableMeasure<Current> measure) -> tmp.setCurrentLimit(measure.magnitude(), measure.unit()));
+                this.currentLimit.ifPresent((MutCurrent measure) -> tmp.setCurrentLimit(measure.magnitude(), measure.unit()));
                 return tmp;
             }
 

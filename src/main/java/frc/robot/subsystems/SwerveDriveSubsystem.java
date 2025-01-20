@@ -6,16 +6,21 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
+import org.json.simple.parser.ParseException;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
-import com.pathplanner.lib.util.PIDConstants;
-import com.pathplanner.lib.util.ReplanningConfig;
-import com.revrobotics.CANSparkBase.IdleMode;
-import com.revrobotics.CANSparkLowLevel.MotorType;
+// import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+// import com.pathplanner.lib.ReplanningConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.MedianFilter;
@@ -105,24 +110,23 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
 
     this.swerveDrive.setPowerDistribution(new PowerDistribution(20, ModuleType.kRev));
-    AutoBuilder.configureHolonomic(
+    try {
+      AutoBuilder.configure(
         this.swerveDrive::getPose, 
         this.swerveDrive::setPose, 
-        this.swerveDrive::getActualSpeeds, 
+        this.swerveDrive::getActualSpeeds,
         (ChassisSpeeds speeds) -> this.swerveDrive.drive(
-          MathUtil.clamp(-speeds.vxMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
-          MathUtil.clamp(-speeds.vyMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
-          MathUtil.clamp(-speeds.omegaRadiansPerSecond/this.swerveDrive.getMaxTurnSpeed(RadiansPerSecond), -1.0, 1.0),
-          HeadingControlMode.kSpeedOnly,
-          Optional.of(false)
-        ),
-        new HolonomicPathFollowerConfig(
+            MathUtil.clamp(-speeds.vxMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
+            MathUtil.clamp(-speeds.vyMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
+            MathUtil.clamp(-speeds.omegaRadiansPerSecond/this.swerveDrive.getMaxTurnSpeed(RadiansPerSecond), -1.0, 1.0),
+            HeadingControlMode.kSpeedOnly,
+            Optional.of(false)
+        ), 
+        new PPHolonomicDriveController(
           new PIDConstants(5.0, 0.0, 0.0),
-          new PIDConstants(2.0, 0.0, 0.2),
-          this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), 
-          maxDistance, 
-          new ReplanningConfig()
-        ),
+          new PIDConstants(2.0, 0.0, 0.2)
+        ), 
+        RobotConfig.fromGUISettings(), 
         () -> {
           var alliance = DriverStation.getAlliance();
           if (alliance.isPresent()) {
@@ -131,7 +135,39 @@ public class SwerveDriveSubsystem extends SubsystemBase {
           return false;
         }, 
         this
-    );
+      );
+    } catch (IOException | ParseException e) {
+      // TODO Review whether this is best practice exception handling for this scenario
+      System.out.println("IO or Parse exception");
+      e.printStackTrace();
+    }
+  //   AutoBuilder.configureHolonomic(
+  //       this.swerveDrive::getPose, 
+  //       this.swerveDrive::setPose, 
+  //       this.swerveDrive::getActualSpeeds, 
+  //       (ChassisSpeeds speeds) -> this.swerveDrive.drive(
+  //         MathUtil.clamp(-speeds.vxMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
+  //         MathUtil.clamp(-speeds.vyMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
+  //         MathUtil.clamp(-speeds.omegaRadiansPerSecond/this.swerveDrive.getMaxTurnSpeed(RadiansPerSecond), -1.0, 1.0),
+  //         HeadingControlMode.kSpeedOnly,
+  //         Optional.of(false)
+  //       ),
+  //       new HolonomicPathFollowerConfig(
+  //         new PIDConstants(5.0, 0.0, 0.0),
+  //         new PIDConstants(2.0, 0.0, 0.2),
+  //         this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), 
+  //         maxDistance, 
+  //         new ReplanningConfig()
+  //       ),
+  //       () -> {
+  //         var alliance = DriverStation.getAlliance();
+  //         if (alliance.isPresent()) {
+  //           return alliance.get() == DriverStation.Alliance.Red;
+  //         }
+  //         return false;
+  //       }, 
+  //       this
+  //   );
   }
 
   public void resetHeading() {

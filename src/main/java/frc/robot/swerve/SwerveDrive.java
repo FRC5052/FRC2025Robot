@@ -11,7 +11,7 @@ import org.json.simple.parser.JSONParser;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.config.PIDConstants;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -24,11 +24,17 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.AngleUnit;
+import edu.wpi.first.units.AngularAccelerationUnit;
+import edu.wpi.first.units.AngularVelocityUnit;
+import edu.wpi.first.units.DistanceUnit;
+import edu.wpi.first.units.LinearAccelerationUnit;
+import edu.wpi.first.units.LinearVelocityUnit;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.MutableMeasure;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -187,7 +193,7 @@ public class SwerveDrive implements Sendable {
      * @param speed The new maximum velocity of this swerve drive, in the given units.
      * @param unit The unit of velocity to use to convert the new value.
      */
-    public void setMaxDriveSpeed(double speed, Velocity<Distance> unit) {
+    public void setMaxDriveSpeed(double speed, LinearVelocityUnit unit) {
         this.maxDriveSpeed = unit.toBaseUnits(speed);
     }
 
@@ -195,7 +201,7 @@ public class SwerveDrive implements Sendable {
      * Configures this swerve drive's maximum translational velocity.
      * @param speed The new maximum velocity of this swerve drive.
      */
-    public void setMaxDriveSpeed(Measure<Velocity<Distance>> speed) {
+    public void setMaxDriveSpeed(Measure<LinearVelocityUnit> speed) {
         this.maxDriveSpeed = speed.baseUnitMagnitude();
     }
     
@@ -204,7 +210,7 @@ public class SwerveDrive implements Sendable {
      * @param speed The new maximum angular velocity of this swerve drive, in the given units.
      * @param unit The unit of angular velocity to use to convert the new value.
      */
-    public void setMaxTurnSpeed(double speed, Velocity<Angle> unit) {
+    public void setMaxTurnSpeed(double speed, AngularVelocityUnit unit) {
         this.maxTurnSpeed = unit.toBaseUnits(speed);
     }
 
@@ -212,7 +218,7 @@ public class SwerveDrive implements Sendable {
      * Configures this swerve drive's maximum rotational velocity.
      * @param speed The new maximum angular velocity of this swerve drive.
      */
-    public void setMaxTurnSpeed(Measure<Velocity<Angle>> speed) {
+    public void setMaxTurnSpeed(Measure<AngularVelocityUnit> speed) {
         this.maxTurnSpeed = speed.baseUnitMagnitude();
     }
 
@@ -221,7 +227,7 @@ public class SwerveDrive implements Sendable {
      * @param accel The new maximum acceleration of this swerve drive, in the given units.
      * @param unit The unit of acceleration to use to convert the new value.
      */
-    public void setMaxDriveAccel(double accel, Velocity<Velocity<Distance>> unit) {
+    public void setMaxDriveAccel(double accel, LinearAccelerationUnit unit) {
         this.maxDriveAccel = unit.toBaseUnits(accel);
     }
 
@@ -229,7 +235,7 @@ public class SwerveDrive implements Sendable {
      * Configures this swerve drive's maximum translational acceleration.
      * @param accel The new maximum acceleration of this swerve drive.
      */
-    public void setMaxDriveAccel(Measure<Velocity<Velocity<Distance>>> accel) {
+    public void setMaxDriveAccel(Measure<LinearAccelerationUnit> accel) {
         this.maxDriveAccel = accel.baseUnitMagnitude();
     }
     
@@ -238,7 +244,7 @@ public class SwerveDrive implements Sendable {
      * @param accel The new maximum angular acceleration of this swerve drive, in the given units.
      * @param unit The unit of angular acceleration to use to convert the new value.
      */
-    public void setMaxTurnAccel(double accel, Velocity<Velocity<Angle>> unit) {
+    public void setMaxTurnAccel(double accel, AngularAccelerationUnit unit) {
         this.maxTurnAccel = unit.toBaseUnits(accel);
     }
 
@@ -246,7 +252,7 @@ public class SwerveDrive implements Sendable {
      * Configures this swerve drive's maximum rotational acceleration.
      * @param accel The new maximum angular acceleration of this swerve drive.
      */
-    public void setMaxTurnAccel(Measure<Velocity<Velocity<Angle>>> accel) {
+    public void setMaxTurnAccel(Measure<AngularAccelerationUnit> accel) {
         this.maxTurnAccel = accel.baseUnitMagnitude();
     }
 
@@ -255,7 +261,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of velocity to use to convert the value.
      * @return The maximum velocity of this swerve drive, in the given units.
      */
-    public double getMaxDriveSpeed(Velocity<Distance> unit) {
+    public double getMaxDriveSpeed(LinearVelocityUnit unit) {
         return unit.fromBaseUnits(this.maxDriveSpeed);
     }
 
@@ -264,7 +270,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of angular velocity to use to convert the value.
      * @return The maximum angular velocity of this swerve drive, in the given units.
      */
-    public double getMaxTurnSpeed(Velocity<Angle> unit) {
+    public double getMaxTurnSpeed(AngularVelocityUnit unit) {
         return unit.fromBaseUnits(this.maxTurnSpeed);
     }
 
@@ -274,7 +280,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of acceleration to use to convert the value.
      * @return The maximum acceleration of this swerve drive, in the given units.
      */
-    public double getMaxDriveAccel(Velocity<Velocity<Distance>> unit) {
+    public double getMaxDriveAccel(LinearAccelerationUnit unit) {
         return unit.fromBaseUnits(this.maxDriveAccel);
     }
 
@@ -283,7 +289,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of angular acceleration to use to convert the value.
      * @return The maximum angular acceleration of this swerve drive, in the given units.
      */
-    public double getMaxTurnAccel(Velocity<Velocity<Angle>> unit) {
+    public double getMaxTurnAccel(AngularAccelerationUnit unit) {
         return unit.fromBaseUnits(this.maxTurnAccel);
     }
 
@@ -292,7 +298,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of distance to use to convert the value.
      * @return The X position of this swerve drive on the field, in the given units.
      */
-    public double getPoseX(Distance unit) {
+    public double getPoseX(DistanceUnit unit) {
         return unit.convertFrom(this.pose.getX(), Meters);
     }
 
@@ -301,7 +307,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of distance to use to convert the value.
      * @return The Y position of this swerve drive on the field, in the given units.
      */
-    public double getPoseY(Distance unit) {
+    public double getPoseY(DistanceUnit unit) {
         return unit.convertFrom(this.pose.getY(), Meters);
     }
 
@@ -318,7 +324,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of angle to use to convert the value.
      * @return The heading of this swerve drive on the field, in the given units.
      */
-    public double getPoseAngle(Angle unit) {
+    public double getPoseAngle(AngleUnit unit) {
         return unit.convertFrom(this.pose.getRotation().getRadians(), Radians);
     }
 
@@ -335,7 +341,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of angle to use to convert the value.
      * @return The target heading value, in the given units, if present.
      */
-    public OptionalDouble getTargetHeading(Angle unit) {
+    public OptionalDouble getTargetHeading(AngleUnit unit) {
         return this.targetHeading.isPresent() ? OptionalDouble.of(unit.convertFrom(this.targetHeading.get().getRadians(), Radians)) : OptionalDouble.empty();
     }
 
@@ -352,7 +358,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of angle to use to convert the value.
      * @return The measured heading value, in the given units.
      */
-    public double getActualHeading(Angle unit) {
+    public double getActualHeading(AngleUnit unit) {
         return this.imu.getHeading(unit);
     }
 
@@ -498,7 +504,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of velocity to use to convert the value.
      * @return The X component of this swerve drive's velocity, in the given units.
      */
-    public double getVelocityX(Velocity<Distance> unit) {
+    public double getVelocityX(LinearVelocityUnit unit) {
         return unit.convertFrom(this.actualSpeeds.vxMetersPerSecond, MetersPerSecond);
     }
 
@@ -507,7 +513,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of velocity to use to convert the value.
      * @return The Y component of this swerve drive's velocity, in the given units.
      */
-    public double getVelocityY(Velocity<Distance> unit) {
+    public double getVelocityY(LinearVelocityUnit unit) {
         return unit.convertFrom(this.actualSpeeds.vyMetersPerSecond, MetersPerSecond);
     }
 
@@ -516,7 +522,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of velocity to use to convert the value.
      * @return The magnitude of this swerve drive's velocity, in the given units.
      */
-    public double getVelocityMagnitude(Velocity<Distance> unit) {
+    public double getVelocityMagnitude(LinearVelocityUnit unit) {
         return Math.hypot(this.getVelocityX(unit), this.getVelocityY(unit));
     }
 
@@ -525,7 +531,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of velocity to use to convert the value.
      * @return The direction of this swerve drive's velocity, in the given units.
      */
-    public double getVelocityDirection(Angle unit) {
+    public double getVelocityDirection(AngleUnit unit) {
         return unit.convertFrom(Math.atan2(this.getVelocityY(MetersPerSecond), this.getVelocityX(MetersPerSecond)), Radians);
     }
 
@@ -534,7 +540,7 @@ public class SwerveDrive implements Sendable {
      * @param unit The unit of angular velocity to use to convert the value.
      * @return The theta component of this swerve drive's velocity, in the given units.
      */
-    public double getTurnVelocity(Velocity<Angle> unit) {
+    public double getTurnVelocity(AngularVelocityUnit unit) {
         return unit.convertFrom(this.actualSpeeds.omegaRadiansPerSecond, RadiansPerSecond);
     } 
 
@@ -679,22 +685,22 @@ public class SwerveDrive implements Sendable {
             return this;
         }
 
-        public Builder withMaxDriveSpeed(double speed, Velocity<Distance> unit) {
+        public Builder withMaxDriveSpeed(double speed, LinearVelocityUnit unit) {
             this.maxDriveSpeed = OptionalDouble.of(unit.toBaseUnits(speed));
             return this;
         }
 
-        public Builder withMaxTurnSpeed(double speed, Velocity<Angle> unit) {
+        public Builder withMaxTurnSpeed(double speed, AngularVelocityUnit unit) {
             this.maxTurnSpeed = OptionalDouble.of(unit.toBaseUnits(speed));
             return this;
         }
 
-        public Builder withMaxDriveAccel(double speed, Velocity<Velocity<Distance>> unit) {
+        public Builder withMaxDriveAccel(double speed, LinearAccelerationUnit unit) {
             this.maxDriveAccel = OptionalDouble.of(unit.toBaseUnits(speed));
             return this;
         }
 
-        public Builder withMaxTurnAccel(double speed, Velocity<Velocity<Angle>> unit) {
+        public Builder withMaxTurnAccel(double speed, AngularAccelerationUnit unit) {
             this.maxTurnAccel = OptionalDouble.of(unit.toBaseUnits(speed));
             return this;
         }
@@ -729,7 +735,7 @@ public class SwerveDrive implements Sendable {
 
             if (json.has("maxDriveSpeed") && (json.get("maxDriveSpeed").isObject() || json.get("maxDriveSpeed").isDouble())) {
                 JsonNode json_inner = json.get("maxDriveSpeed");
-                Velocity<Distance> unit = MetersPerSecond;
+                LinearVelocityUnit unit = MetersPerSecond;
                 if (json_inner.has("unit") && json_inner.get("unit").isTextual() && json_inner.has("value") && json_inner.get("value").isDouble()) {
                     unit = Objects.requireNonNullElse(SwerveUtil.velocityFromName(json_inner.get("unit").textValue()), unit);
                     this.withMaxDriveSpeed(json_inner.get("value").doubleValue(), unit);
@@ -740,7 +746,7 @@ public class SwerveDrive implements Sendable {
 
             if (json.has("maxTurnSpeed") && (json.get("maxTurnSpeed").isObject() || json.get("maxTurnSpeed").isDouble())) {
                 JsonNode json_inner = json.get("maxTurnSpeed");
-                Velocity<Angle> unit = RadiansPerSecond;
+                AngularVelocityUnit unit = RadiansPerSecond;
                 if (json_inner.has("unit") && json_inner.get("unit").isTextual() && json_inner.has("value") && json_inner.get("value").isDouble()) {
                     unit = Objects.requireNonNullElse(SwerveUtil.angularVelocityFromName(json_inner.get("unit").textValue()), unit);
                     this.withMaxTurnSpeed(json_inner.get("value").doubleValue(), unit);
@@ -751,7 +757,7 @@ public class SwerveDrive implements Sendable {
 
             if (json.has("maxDriveAccel") && (json.get("maxDriveAccel").isObject() || json.get("maxDriveAccel").isDouble())) {
                 JsonNode json_inner = json.get("maxDriveAccel");
-                Velocity<Velocity<Distance>> unit = MetersPerSecondPerSecond;
+                LinearAccelerationUnit unit = MetersPerSecondPerSecond;
                 if (json_inner.has("unit") && json_inner.get("unit").isTextual() && json_inner.has("value") && json_inner.get("value").isDouble()) {
                     unit = Objects.requireNonNullElse(SwerveUtil.accelFromName(json_inner.get("unit").textValue()), unit);
                     this.withMaxDriveAccel(json_inner.get("value").doubleValue(), unit);
@@ -762,7 +768,7 @@ public class SwerveDrive implements Sendable {
 
             if (json.has("maxTurnAccel") && (json.get("maxTurnAccel").isObject() || json.get("maxTurnAccel").isDouble())) {
                 JsonNode json_inner = json.get("maxTurnAccel");
-                Velocity<Velocity<Angle>> unit = RadiansPerSecond.per(Second);
+                AngularAccelerationUnit unit = RadiansPerSecond.per(Second);
                 if (json_inner.has("unit") && json_inner.get("unit").isTextual() && json_inner.has("value") && json_inner.get("value").isDouble()) {
                     unit = Objects.requireNonNullElse(SwerveUtil.angularAccelFromName(json_inner.get("unit").textValue()), unit);
                     this.withMaxTurnAccel(json_inner.get("value").doubleValue(), unit);

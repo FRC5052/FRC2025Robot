@@ -28,15 +28,13 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-import com.pathplanner.lib.commands.PathfindHolonomic;
-import com.pathplanner.lib.commands.PathfindThenFollowPathHolonomic;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.path.PathPlannerTrajectory;
+import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
 import com.pathplanner.lib.util.PPLibTelemetry;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.revrobotics.AbsoluteEncoder;
-import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CameraServerJNI.TelemetryKind;
@@ -114,7 +112,7 @@ public class RobotContainer {
       );
 
     this.autoChooser = AutoBuilder.buildAutoChooser();
-
+    
 
     Shuffleboard.getTab("Driver Panel").add("Intake Camera", CameraServer.startAutomaticCapture()).withSize(6, 5).withPosition(0, 0);
     Shuffleboard.getTab("Driver Panel").add("Auto Chooser", this.autoChooser).withSize(2, 1).withPosition(6, 0);
