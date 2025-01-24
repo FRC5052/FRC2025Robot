@@ -2,9 +2,11 @@ package frc.robot;
 
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.OptionalInt;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Twist3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.AngleUnit;
@@ -19,29 +21,62 @@ import static edu.wpi.first.units.Units.*;
 public class Limelight {
     private static NetworkTable limelightTable;
 
-    private static void init() {
-        if (limelightTable == null) {
-            limelightTable = NetworkTableInstance.getDefault().getTable("limelight");
-        }
+    static {
+        limelightTable = NetworkTableInstance.getDefault().getTable("limelight");
+    }
+
+    public void setTargetID(int id) {
+        limelightTable.getEntry("priorityid").setInteger(id);
     }
 
     public static boolean hasTarget() {
-        init();
         return limelightTable.getEntry("tv").getInteger(0) != 0;
     }
 
     public static OptionalDouble getTargetX() {
-        init();
         return hasTarget() ? OptionalDouble.of(limelightTable.getEntry("tx").getDouble(0.0)) : OptionalDouble.empty(); 
     }
 
     public static OptionalDouble getTargetY() {
-        init();
         return hasTarget() ? OptionalDouble.of(limelightTable.getEntry("tx").getDouble(0.0)) : OptionalDouble.empty(); 
     }
 
+    public static OptionalDouble getTargetArea() {
+        return hasTarget() ? OptionalDouble.of(limelightTable.getEntry("ta").getDouble(0.0)) : OptionalDouble.empty(); 
+    }
+
+    public void setTargetID() {
+        setTargetID(0);
+    }
+
+    public OptionalInt getTargetID() {
+        return hasTarget() ? OptionalInt.of((int)limelightTable.getEntry("tid").getInteger(0)) : OptionalInt.empty();
+    }
+
+    public Twist3d getCameraOffset() {
+        double[] poseArray = limelightTable.getEntry("camerapose_robotspace").getDoubleArray(new double[6]);
+        return new Twist3d(
+            poseArray[0], 
+            poseArray[1], 
+            poseArray[2], 
+            Radians.convertFrom(poseArray[3], Degrees), 
+            Radians.convertFrom(poseArray[4], Degrees), 
+            Radians.convertFrom(poseArray[5], Degrees)
+        );
+    }
+
+    public void setCameraOffset(Twist3d offset) {
+        limelightTable.getEntry("camerapose_robotspace_set").setDoubleArray(new double[] {
+            offset.dx,
+            offset.dy,
+            offset.dz,
+            Degrees.convertFrom(offset.rx, Radians),
+            Degrees.convertFrom(offset.ry, Radians),
+            Degrees.convertFrom(offset.rz, Radians)
+        });
+    }
+
     public static Optional<Pose2d> getFieldCentricRobotPose(DistanceUnit distanceUnit, boolean useMegaTag2) {
-        init();
         if (hasTarget()) {
             double[] poseArray = useMegaTag2 ? limelightTable.getEntry("botpose_orb_wpiblue").getDoubleArray(new double[6]) : limelightTable.getEntry("botpose_wpiblue").getDoubleArray(new double[6]);
             return Optional.of(new Pose2d(distanceUnit.convertFrom(poseArray[0], Meters), distanceUnit.convertFrom(poseArray[1], Meters), new Rotation2d(Radians.convertFrom(poseArray[5], Degrees))));
@@ -51,7 +86,6 @@ public class Limelight {
     }
 
     public static void setRobotYaw(double angle, double angularVelocity, AngleUnit angleUnit, AngularVelocityUnit angularVelocityUnit) {
-        init();
         limelightTable.getEntry("robot_orientation_set").setDoubleArray(new double[] {
             Degrees.convertFrom(angle, angleUnit),
             DegreesPerSecond.convertFrom(angularVelocity, angularVelocityUnit),

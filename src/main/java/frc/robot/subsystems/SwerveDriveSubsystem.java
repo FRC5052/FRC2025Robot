@@ -73,25 +73,25 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       .withIMU(new NavXSwerveIMU.Builder().withPort())
       .withModules(new SwerveModule.Builder[] {
         module_cfg.clone() // Front Right
-          .withOffset(new Translation2d(9, -9), Inches)
+          .withOffset(new Translation2d(10, -10), Inches)
           .withDriveMotor(motor_cfg.clone().withID(10))
           .withPivotMotor(motor_cfg.clone().withID(11))
-          .withAbsoluteEncoder(encoder_cfg.clone().withID(12).withOffset(59.50, Degrees)),
+          .withAbsoluteEncoder(encoder_cfg.clone().withID(12).withOffset(-57.57+180, Degrees)),
         module_cfg.clone() // Front Left
-          .withOffset(new Translation2d(9, 9), Inches)
+          .withOffset(new Translation2d(10, 10), Inches)
           .withDriveMotor(motor_cfg.clone().withID(7))
           .withPivotMotor(motor_cfg.clone().withID(8))
-          .withAbsoluteEncoder(encoder_cfg.clone().withID(9).withOffset(-31.37, Degrees)),
+          .withAbsoluteEncoder(encoder_cfg.clone().withID(9).withOffset(35.24-180, Degrees)),
         module_cfg.clone() // Back Right
-          .withOffset(new Translation2d(-9, -9), Inches)
+          .withOffset(new Translation2d(-10, -10), Inches)
           .withDriveMotor(motor_cfg.clone().withID(4))
           .withPivotMotor(motor_cfg.clone().withID(5))
-          .withAbsoluteEncoder(encoder_cfg.clone().withID(6).withOffset(54.22, Degrees)),
+          .withAbsoluteEncoder(encoder_cfg.clone().withID(6).withOffset(-124.36+180, Degrees)),
         module_cfg.clone() // Back Left
-          .withOffset(new Translation2d(-9, 9), Inches)
+          .withOffset(new Translation2d(-10, 10), Inches)
           .withDriveMotor(motor_cfg.clone().withID(1))
           .withPivotMotor(motor_cfg.clone().withID(2))
-          .withAbsoluteEncoder(encoder_cfg.clone().withID(3).withOffset(-151.26, Degrees))
+          .withAbsoluteEncoder(encoder_cfg.clone().withID(3).withOffset(29.00-180, Degrees))
       })
       .withHeadingPID(new PIDConstants(2.0, 0.0, 0.2))
       .withModuleDrivePID(new PIDConstants(0.5, 0.0, 0.0))
