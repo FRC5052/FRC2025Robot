@@ -18,4 +18,20 @@ public final class Constants {
     public static final int kLEDPort = 1; //TODO change to whatever pwm port the led ends up using
     public static final int kLEDLength = 100;
   }
+  public static class ElevatorConstants {
+    // PID Constants
+    public static final double kP = 0;
+    public static final double kI = 0;
+    public static final double kD = 0;
+    // Feedforward Constants
+    public static final double kS = 0;
+    public static final double kG = 0;
+    public static final double kV = 0;
+
+    // Zero and max position of motor (rotations)
+    public static final double bottom = 0;
+    public static final double top = 0;
+
+    public static final int kLimitSwitchPort = 0;
+  }
 }

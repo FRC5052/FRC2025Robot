@@ -9,6 +9,7 @@ import frc.robot.commands.Autos;
 import frc.robot.subsystems.AddressableLEDSubsystem;
 import frc.robot.subsystems.ColorSensorSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 
 import static edu.wpi.first.units.Units.*;
@@ -82,6 +83,7 @@ public class RobotContainer {
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
 
   public final SwerveDriveSubsystem m_swerveDriveSubsystem;
+  public final IntakeSubsystem m_intakeSubsystem;
   // public final AddressableLEDSubsystem m_addressableLEDSubsystem;
   // public final ColorSensorSubsystem m_colorSensorSubsystem;
 
@@ -110,6 +112,8 @@ public class RobotContainer {
       () -> this.m_driverController.getRawAxis(0), 
       () -> -this.m_driverController.getRawAxis(2)
       );
+      
+    this.m_intakeSubsystem = new IntakeSubsystem();
 
     this.autoChooser = AutoBuilder.buildAutoChooser();
     
@@ -169,6 +173,10 @@ public class RobotContainer {
         m_swerveDriveSubsystem.setFullSpeed(on);
       }
     });
+  }
+
+  public void resetIntake() {
+
   }
 
   /**
