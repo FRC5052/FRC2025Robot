@@ -28,10 +28,14 @@ public final class Constants {
     public static final double kG = 0;
     public static final double kV = 0;
 
-    // Zero and max position of motor (rotations)
+    // Zero and max position of motor (inches)
     public static final double bottom = 0;
     public static final double top = 0;
 
     public static final int kLimitSwitchPort = 0;
+
+    // Gear ratio: ~8.53
+    public static final double gearRatio = 8.53;
+
   }
 }

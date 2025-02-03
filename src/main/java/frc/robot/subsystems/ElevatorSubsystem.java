@@ -37,8 +37,11 @@ public class ElevatorSubsystem extends SubsystemBase {
     private SparkClosedLoopController elevatorPID;
     private ElevatorFeedforward feedforward;
     private DigitalInput bottomLimit;
+    private boolean homed;
 
     public ElevatorSubsystem() {
+        homed = false;
+
         elevatorMotor = new SparkMax(0, MotorType.kBrushless);
         followerMotor = new SparkMax(0, MotorType.kBrushless);
 
@@ -86,12 +89,20 @@ public class ElevatorSubsystem extends SubsystemBase {
     private void handleBounds() {
         if (bottomLimit.get()) {
             elevatorMotor.set(0);
-            elevatorMotor.getEncoder().setPosition(ElevatorConstants.bottom);
+            elevatorMotor.getEncoder().setPosition(inchesToRotations(ElevatorConstants.bottom));
         }
-        if (elevatorMotor.getEncoder().getPosition() > ElevatorConstants.top) {
+        if (elevatorMotor.getEncoder().getPosition() > inchesToRotations(ElevatorConstants.top)) {
             elevatorMotor.set(0);
-            elevatorMotor.getEncoder().setPosition(ElevatorConstants.top);
+            elevatorMotor.getEncoder().setPosition(inchesToRotations(ElevatorConstants.top));
         }
+    }
+
+    private double inchesToRotations(double inches) {
+        //Find conversion from inches of elevator movement to rotations of motor
+    }
+
+    private double rotationsToInches(double rotations) {
+        //Find conversion from rotations of motor to inches of elevator movement
     }
 
     private double calculateFeedForward(double velocity, AngleUnit unit) {
@@ -99,35 +110,43 @@ public class ElevatorSubsystem extends SubsystemBase {
         return (ElevatorConstants.kS * Math.signum(vel)) + ElevatorConstants.kG + (ElevatorConstants.kV * vel);
     }
 
+    public void homeElevator() {
+        elevatorMotor.set(-0.1); // Slow downward movement until bottom limit is hit
+        if (bottomLimit.get()) {
+            handleBounds();
+        }
+    }
+
     @Override
     public void periodic() {
-        switch (this.elevatorLevel) {
-            case L0:
-                setMotor(0, Rotations); //TODO: Figure out corresponding angular position
-                break;
-            case L1:
-                setMotor(0, Rotations); //TODO: Figure out corresponding angular position
-                break;
-            case L2:
-                setMotor(0, Rotations); //TODO: Figure out corresponding angular position
-                break;
-            case Intake:
-                setMotor(0, Rotations);
-                break;
-            case L3:
-                setMotor(0, Rotations); //TODO: Figure out corresponding angular position
-                break;
-            default:
-                setMotor(0, Rotations); //TODO: Figure out corresponding angular position
-                break;
+        if(homed) {
+            switch (this.elevatorLevel) {
+                case L0:
+                    setMotor(0, Rotations); //TODO: Figure out corresponding angular position
+                    break;
+                case L1:
+                    setMotor(0, Rotations); //TODO: Figure out corresponding angular position
+                    break;
+                case L2:
+                    setMotor(0, Rotations); //TODO: Figure out corresponding angular position
+                    break;
+                case Intake:
+                    setMotor(0, Rotations);
+                    break;
+                case L3:
+                    setMotor(0, Rotations); //TODO: Figure out corresponding angular position
+                    break;
+                default:
+                    setMotor(0, Rotations); //TODO: Figure out corresponding angular position
+                    break;
+            }
         }
     }
 
     private void updateTelemetry() {
-        SmartDashboard.putNumber("Elevator Height", );
-        SmartDashboard.putNumber("Elevator Target", );
-        SmartDashboard.putBoolean("Elevator Homed", );
+        SmartDashboard.putNumber("Elevator Height", rotationsToInches(elevatorMotor.getEncoder().getPosition()));
         SmartDashboard.putNumber("Elevator Current", elevatorMotor.getOutputCurrent());
-        SmartDashboard.putNumber("Elevator Velocity", );
+        SmartDashboard.putNumber("Elevator Velocity", elevatorMotor.getEncoder().getVelocity());
+        SmartDashboard.putBoolean("Elevator Homed?", homed);
     }
 }
