@@ -11,6 +11,7 @@ import frc.robot.subsystems.ColorSensorSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.ElevatorLevel;
 
 import static edu.wpi.first.units.Units.*;
 
@@ -91,8 +92,8 @@ public class RobotContainer {
   private final CommandGenericHID m_driverController =
       new CommandGenericHID(OperatorConstants.kDriverControllerPort);
 
-  // private final CommandXboxController m_secondaryController =
-  //     new CommandXboxController(1);
+  private final CommandXboxController m_secondaryController =
+      new CommandXboxController(1);
 
   private static RobotContainer instance;
 
@@ -141,8 +142,6 @@ public class RobotContainer {
     // cancelling on release.
     m_driverController.button(3).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.resetHeading()));
     m_driverController.button(4).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.setTargetPose(new Pose2d(9.5, 2.0, new Rotation2d(Radians.convertFrom(90.0, Degrees))))));
-    // m_driverController.button(6).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.cancelMove()));
-    // m_driverController.button(5).onTrue(m_intakeShooterSubsystem.hold());
 
     Command secondControllerCommand = new Command() {
 
@@ -153,6 +152,22 @@ public class RobotContainer {
     };
 
     secondControllerCommand.setName("Teleop Intake");
+
+    m_secondaryController.a().whileTrue(new Command() {
+      @Override
+      public void initialize() {
+        m_intakeSubsystem.elevatorSubsystem.setLevel(m_intakeSubsystem.elevatorSubsystem.getLevel().next());
+      }
+    });
+
+    m_secondaryController.b().whileTrue(new Command() {
+      @Override
+      public void initialize() {
+        m_intakeSubsystem.elevatorSubsystem.setLevel(m_intakeSubsystem.elevatorSubsystem.getLevel().prev());
+      }
+    });
+
+    m_secondaryController.y().onTrue(new InstantCommand(() -> m_intakeSubsystem.elevatorSubsystem.resetLevel()));
 
     m_driverController.button(7).whileTrue(new Command() {
       private boolean on = true;
@@ -173,6 +188,7 @@ public class RobotContainer {
         m_swerveDriveSubsystem.setFullSpeed(on);
       }
     });
+    
   }
 
   public void resetIntake() {

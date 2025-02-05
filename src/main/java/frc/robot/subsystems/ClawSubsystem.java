@@ -10,8 +10,8 @@ public class ClawSubsystem extends SubsystemBase {
     private SparkMax intakeMotor;
 
     public ClawSubsystem() {
-        this.pivotMotor = new SparkMax(0, MotorType.kBrushless);
-        this.intakeMotor = new SparkMax(0, MotorType.kBrushless);
+        // this.pivotMotor = new SparkMax(0, MotorType.kBrushless);
+        // this.intakeMotor = new SparkMax(0, MotorType.kBrushless);
     }
 
     public void setIntakeVelocity(double velocity) {
