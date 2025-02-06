@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -20,13 +22,17 @@ public final class Constants {
   }
   public static class ElevatorConstants {
     // PID Constants
-    public static final double kP = 0.25;
+    public static final double kP = 0;
     public static final double kI = 0;
     public static final double kD = 0;
     // Feedforward Constants
     public static final double kS = 0;
     public static final double kG = 0;
     public static final double kV = 0;
+    public static final double kA = 0;
+
+    public static final double kMaxVelocity = 1920.0;
+    public static final double kMaxAcceleration = 3840.0;
 
     // Zero and max position of motor (rotations)
     public static final double bottom = 0;

@@ -153,19 +153,9 @@ public class RobotContainer {
 
     secondControllerCommand.setName("Teleop Intake");
 
-    m_secondaryController.a().whileTrue(new Command() {
-      @Override
-      public void initialize() {
-        m_intakeSubsystem.elevatorSubsystem.setLevel(m_intakeSubsystem.elevatorSubsystem.getLevel().next());
-      }
-    });
+    m_secondaryController.a().whileTrue(new InstantCommand(() -> m_intakeSubsystem.setLevel(m_intakeSubsystem.nextLevel().get())));
 
-    m_secondaryController.b().whileTrue(new Command() {
-      @Override
-      public void initialize() {
-        m_intakeSubsystem.elevatorSubsystem.setLevel(m_intakeSubsystem.elevatorSubsystem.getLevel().prev());
-      }
-    });
+    m_secondaryController.b().whileTrue(new InstantCommand(() -> m_intakeSubsystem.setLevel(m_intakeSubsystem.prevLevel().get())));
 
     m_secondaryController.y().onTrue(new InstantCommand(() -> m_intakeSubsystem.elevatorSubsystem.resetLevel()));
 

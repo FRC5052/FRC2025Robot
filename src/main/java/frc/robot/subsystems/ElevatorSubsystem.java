@@ -7,6 +7,8 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.Second;
 
+import java.util.Optional;
+
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -19,14 +21,22 @@ import com.revrobotics.spark.config.MAXMotionConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.AngleUnit;
 import edu.wpi.first.units.CurrentUnit;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Robot;
 import frc.robot.Constants.ElevatorConstants;
 
 public class ElevatorSubsystem extends SubsystemBase {
@@ -36,9 +46,13 @@ public class ElevatorSubsystem extends SubsystemBase {
     private SparkMax elevatorMotor;
     private SparkMax followerMotor;
     private SparkMaxConfig config;
-    private ElevatorLevel elevatorLevel;
+    private Optional<ElevatorLevel> elevatorLevel;
     private SparkClosedLoopController elevatorPID;
     private ElevatorFeedforward feedforward;
+    private TrapezoidProfile.Constraints profileConstraints;
+    private TrapezoidProfile profile;
+    private TrapezoidProfile.State profileSetpoint;
+    private TrapezoidProfile.State profileGoal;
     private DigitalInput bottomLimit;
     private boolean homed;
 
@@ -51,7 +65,12 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         bottomLimit = new DigitalInput(ElevatorConstants.kLimitSwitchPort);
 
-        feedforward = new ElevatorFeedforward(ElevatorConstants.kS, ElevatorConstants.kG, ElevatorConstants.kV);
+        profileConstraints = new TrapezoidProfile.Constraints(ElevatorConstants.kMaxVelocity, ElevatorConstants.kMaxAcceleration);
+        profile = new TrapezoidProfile(profileConstraints);
+        profileSetpoint = new TrapezoidProfile.State();
+        profileGoal = new TrapezoidProfile.State();
+        
+        feedforward = new ElevatorFeedforward(ElevatorConstants.kS, ElevatorConstants.kG, ElevatorConstants.kV, ElevatorConstants.kA);
 
         config = new SparkMaxConfig();
         config.closedLoop
@@ -59,11 +78,15 @@ public class ElevatorSubsystem extends SubsystemBase {
             .pidf(ElevatorConstants.kP, ElevatorConstants.kI, ElevatorConstants.kD, feedforward.calculate(0));
         config.closedLoop.maxMotion
             // TODO: multiply by gear ratio
-            .maxAcceleration(3840.0)
-            .maxVelocity(1920.0)
+            .maxAcceleration(ElevatorConstants.kMaxAcceleration)
+            .maxVelocity(ElevatorConstants.kMaxVelocity)
             .allowedClosedLoopError(0.5)
             .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal);
         config.encoder
+            // .positionConversionFactor(Constants.ElevatorConstants.gearRatio)
+            // .velocityConversionFactor(Constants.ElevatorConstants.gearRatio);
+            // .positionConversionFactor(1.0 / Constants.ElevatorConstants.top)
+            // .velocityConversionFactor(1.0);
             .positionConversionFactor(1.0)
             .velocityConversionFactor(1.0);
         elevatorMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
@@ -75,9 +98,10 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         elevatorPID = elevatorMotor.getClosedLoopController();
 
-        elevatorLevel = ElevatorLevel.Home;
+        elevatorLevel = Optional.of(ElevatorLevel.Home);
 
         elevatorMotor.getEncoder().setPosition(0);
+        SmartDashboard.putData("elevator", this);
     }
 
     public enum ElevatorLevel {
@@ -94,7 +118,7 @@ public class ElevatorSubsystem extends SubsystemBase {
             this.level = level;
         }
 
-        public double level() {
+        public double height() {
             return this.level;
         }
 
@@ -137,39 +161,43 @@ public class ElevatorSubsystem extends SubsystemBase {
         }
     }
 
-    public void setLevel(ElevatorLevel height) {
-        elevatorLevel = height;
+    public void setLevelSetpoint(ElevatorLevel level) {
+        elevatorLevel = Optional.of(level);
+        profileGoal = new TrapezoidProfile.State(level.height(), 0);
+    }
+
+    public void setHeightSetpoint(double height) {
+        elevatorLevel = Optional.empty();
+        profileGoal = new TrapezoidProfile.State(MathUtil.clamp(height, 0.0, Constants.ElevatorConstants.top), 0);
     }
 
     public void resetLevel() {
         elevatorMotor.getEncoder().setPosition(0);
-        elevatorLevel = ElevatorLevel.Home;
+        profileGoal = new TrapezoidProfile.State(0, 0);
+        elevatorLevel = elevatorLevel.map((ElevatorLevel level) -> {
+            return ElevatorLevel.Home;
+        });
     }
 
-    public ElevatorLevel getLevel() {
+    public Optional<ElevatorLevel> getLevelSetpoint() {
         return elevatorLevel;
+    }
+
+    public double getHeightSetpoint() {
+        return profileGoal.position;
+    }
+
+    public double getMeasuredHeight() {
+        return elevatorMotor.getEncoder().getPosition();
     }
 
     private void setMotor(double position, AngleUnit unit) {
         elevatorPID.setReference(position, ControlType.kMAXMotionPositionControl);
     }
 
-    public void rawSetMotor(double value) {
-        elevatorMotor.set(value);
-    }
-
-    private void handleBounds() {
-        if (bottomLimit.get()) {
-            elevatorMotor.set(0);
-            // elevatorMotor.getEncoder().setPosition(inchesToRotations(ElevatorConstants.bottom));
-            elevatorMotor.getEncoder().setPosition(ElevatorConstants.bottom);
-        }
-        if (elevatorMotor.getEncoder().getPosition() > ElevatorConstants.top) {
-        // if (elevatorMotor.getEncoder().getPosition() > inchesToRotations(ElevatorConstants.top)) {
-            elevatorMotor.set(0);
-            // elevatorMotor.getEncoder().setPosition(inchesToRotations(ElevatorConstants.top));
-            elevatorMotor.getEncoder().setPosition(ElevatorConstants.top);
-        }
+    // For use only for tuning feedforward, remove later
+    public void setElevatorMotorVoltage(double voltage) {
+        elevatorMotor.setVoltage(voltage);
     }
 
     // private double inchesToRotations(double inches) {
@@ -191,14 +219,18 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        System.out.println(elevatorMotor.getEncoder().getPosition());
+        profileSetpoint = profile.calculate(Robot.kDefaultPeriod, profileSetpoint, profileGoal);
         config.closedLoop
-            .pidf(ElevatorConstants.kP, ElevatorConstants.kI, ElevatorConstants.kD, feedforward.calculate(elevatorMotor.getEncoder().getVelocity()));
+            .pidf(ElevatorConstants.kP, ElevatorConstants.kI, ElevatorConstants.kD, feedforward.calculate(profileSetpoint.velocity));
 
         elevatorMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
 
+        if(!bottomLimit.get()){
+            resetLevel();
+        }
+
         if (homed) {
-            setMotor(this.elevatorLevel.level(), Rotations);
+            setMotor(profileSetpoint.position, Rotations);
         } else {
             homeElevator();
         }
@@ -209,5 +241,16 @@ public class ElevatorSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("Elevator Current", elevatorMotor.getOutputCurrent());
         SmartDashboard.putNumber("Elevator Velocity", elevatorMotor.getEncoder().getVelocity());
         SmartDashboard.putBoolean("Elevator Homed?", homed);
+    }
+
+    @Override
+    public void initSendable(SendableBuilder builder) {
+        builder.setSmartDashboardType("Elevator");
+        builder.addDoubleProperty("measuredHeight", () -> this.getMeasuredHeight(), null);
+        builder.addDoubleProperty("heightSetpoint", () -> this.getHeightSetpoint(), null);
+        builder.addDoubleArrayProperty("tuning", () -> new double[] {
+            this.getMeasuredHeight(),
+            this.getHeightSetpoint()
+        }, null);
     }
 }
