@@ -21,8 +21,11 @@ public final class Constants {
     public static final int kLEDLength = 100;
   }
   public static class ElevatorConstants {
+    // Motor CAN IDs
+    public static final int kElevatorMotorID = 13;
+    public static final int kFollowerMotorID = 14;
     // PID Constants
-    public static final double kP = 0;
+    public static final double kP = 0.25;
     public static final double kI = 0;
     public static final double kD = 0;
     // Feedforward Constants
@@ -43,5 +46,22 @@ public final class Constants {
     // Gear ratio: ~8.53
     public static final double gearRatio = 8.53;
 
+  }
+
+  //TODO: set these later
+  public static class ClawConstants {
+    // Motor CAN IDs
+    public static final int kPivotMotorID = 0; 
+    public static final int kIntakeMotorID = 0;
+    // PID Constants
+    public static final double kP = 0;
+    public static final double kI = 0;
+    public static final double kD = 0;
+
+    public static final double kMaxVelocity = 0;
+    public static final double kMaxAcceleration = 0;
+    // Claw Positions
+    public static final double kIdlePosition = 0;
+    public static final double kScorePosition = 0;
   }
 }

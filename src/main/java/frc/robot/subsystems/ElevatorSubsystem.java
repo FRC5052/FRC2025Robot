@@ -32,6 +32,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -39,7 +40,7 @@ import frc.robot.Constants;
 import frc.robot.Robot;
 import frc.robot.Constants.ElevatorConstants;
 
-public class ElevatorSubsystem extends SubsystemBase {
+public class ElevatorSubsystem extends SubsystemBase implements Sendable {
     // Gearbox has ~8.53 gear ratio
     // Climb ~120:1 gear ratio
     // Idk why I'm putting that here lol
@@ -47,12 +48,8 @@ public class ElevatorSubsystem extends SubsystemBase {
     private SparkMax followerMotor;
     private SparkMaxConfig config;
     private Optional<ElevatorLevel> elevatorLevel;
-    private SparkClosedLoopController elevatorPID;
     private ElevatorFeedforward feedforward;
-    private TrapezoidProfile.Constraints profileConstraints;
-    private TrapezoidProfile profile;
-    private TrapezoidProfile.State profileSetpoint;
-    private TrapezoidProfile.State profileGoal;
+    private ProfiledPIDController feedback;
     private DigitalInput bottomLimit;
     private boolean homed;
 
@@ -60,28 +57,16 @@ public class ElevatorSubsystem extends SubsystemBase {
         super();
         homed = true;
 
-        elevatorMotor = new SparkMax(13, MotorType.kBrushless);
-        followerMotor = new SparkMax(14, MotorType.kBrushless);
+        elevatorMotor = new SparkMax(ElevatorConstants.kElevatorMotorID, MotorType.kBrushless);
+        followerMotor = new SparkMax(ElevatorConstants.kFollowerMotorID, MotorType.kBrushless);
 
         bottomLimit = new DigitalInput(ElevatorConstants.kLimitSwitchPort);
 
-        profileConstraints = new TrapezoidProfile.Constraints(ElevatorConstants.kMaxVelocity, ElevatorConstants.kMaxAcceleration);
-        profile = new TrapezoidProfile(profileConstraints);
-        profileSetpoint = new TrapezoidProfile.State();
-        profileGoal = new TrapezoidProfile.State();
+        feedback = new ProfiledPIDController(ElevatorConstants.kP, ElevatorConstants.kI, ElevatorConstants.kD, new TrapezoidProfile.Constraints(ElevatorConstants.kMaxVelocity, ElevatorConstants.kMaxAcceleration));
         
-        feedforward = new ElevatorFeedforward(ElevatorConstants.kS, ElevatorConstants.kG, ElevatorConstants.kV, ElevatorConstants.kA);
+        feedforward = new ElevatorFeedforward(ElevatorConstants.kS, ElevatorConstants.kG, ElevatorConstants.kV, ElevatorConstants.kA, Robot.kDefaultPeriod);
 
         config = new SparkMaxConfig();
-        config.closedLoop
-            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .pidf(ElevatorConstants.kP, ElevatorConstants.kI, ElevatorConstants.kD, feedforward.calculate(0));
-        config.closedLoop.maxMotion
-            // TODO: multiply by gear ratio
-            .maxAcceleration(ElevatorConstants.kMaxAcceleration)
-            .maxVelocity(ElevatorConstants.kMaxVelocity)
-            .allowedClosedLoopError(0.5)
-            .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal);
         config.encoder
             // .positionConversionFactor(Constants.ElevatorConstants.gearRatio)
             // .velocityConversionFactor(Constants.ElevatorConstants.gearRatio);
@@ -96,12 +81,11 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         followerMotor.configure(followConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
-        elevatorPID = elevatorMotor.getClosedLoopController();
-
         elevatorLevel = Optional.of(ElevatorLevel.Home);
 
         elevatorMotor.getEncoder().setPosition(0);
         SmartDashboard.putData("elevator", this);
+        SmartDashboard.putData("elevator/feedback", this.feedback);
     }
 
     public enum ElevatorLevel {
@@ -163,17 +147,17 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     public void setLevelSetpoint(ElevatorLevel level) {
         elevatorLevel = Optional.of(level);
-        profileGoal = new TrapezoidProfile.State(level.height(), 0);
+        feedback.setGoal(level.height());
     }
 
     public void setHeightSetpoint(double height) {
         elevatorLevel = Optional.empty();
-        profileGoal = new TrapezoidProfile.State(MathUtil.clamp(height, 0.0, Constants.ElevatorConstants.top), 0);
+        feedback.setGoal(MathUtil.clamp(height, 0.0, Constants.ElevatorConstants.top));
     }
 
     public void resetLevel() {
         elevatorMotor.getEncoder().setPosition(0);
-        profileGoal = new TrapezoidProfile.State(0, 0);
+        feedback.setGoal(0.0);
         elevatorLevel = elevatorLevel.map((ElevatorLevel level) -> {
             return ElevatorLevel.Home;
         });
@@ -184,21 +168,28 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     public double getHeightSetpoint() {
-        return profileGoal.position;
+        return feedback.getGoal().position;
+    }
+
+    public double getVelocitySetpoint() {
+        return feedback.getGoal().velocity;
     }
 
     public double getMeasuredHeight() {
         return elevatorMotor.getEncoder().getPosition();
     }
 
-    private void setMotor(double position, AngleUnit unit) {
-        elevatorPID.setReference(position, ControlType.kMAXMotionPositionControl);
+    public double getMeasuredVelocity() {
+        return elevatorMotor.getEncoder().getVelocity();
+    }
+
+    private void setMotor() {
+        double output = feedback.calculate(getMeasuredHeight());
+        output += feedforward.calculate(feedback.getSetpoint().velocity);
+        elevatorMotor.setVoltage(MathUtil.clamp(output, 0.0, elevatorMotor.getBusVoltage()));
     }
 
     // For use only for tuning feedforward, remove later
-    public void setElevatorMotorVoltage(double voltage) {
-        elevatorMotor.setVoltage(voltage);
-    }
 
     // private double inchesToRotations(double inches) {
     //     //Find conversion from inches of elevator movement to rotations of motor
@@ -219,38 +210,69 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        profileSetpoint = profile.calculate(Robot.kDefaultPeriod, profileSetpoint, profileGoal);
-        config.closedLoop
-            .pidf(ElevatorConstants.kP, ElevatorConstants.kI, ElevatorConstants.kD, feedforward.calculate(profileSetpoint.velocity));
-
-        elevatorMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
-
+        // System.out.println(feedforward.getKg() + " " + feedback.getP());
         if(!bottomLimit.get()){
             resetLevel();
         }
 
         if (homed) {
-            setMotor(profileSetpoint.position, Rotations);
+            setMotor();
         } else {
             homeElevator();
         }
     }
 
-    private void updateTelemetry() {
-        // SmartDashboard.putNumber("Elevator Height", rotationsToInches(elevatorMotor.getEncoder().getPosition()));
-        SmartDashboard.putNumber("Elevator Current", elevatorMotor.getOutputCurrent());
-        SmartDashboard.putNumber("Elevator Velocity", elevatorMotor.getEncoder().getVelocity());
-        SmartDashboard.putBoolean("Elevator Homed?", homed);
-    }
-
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.setSmartDashboardType("Elevator");
+        builder.addDoubleProperty("feedforward/s", () -> this.feedforward.getKs(), (double value) -> {
+            this.feedforward = new ElevatorFeedforward(
+                value, 
+                this.feedforward.getKg(), 
+                this.feedforward.getKv(), 
+                this.feedforward.getKa(), 
+                this.feedforward.getDt()
+            );
+        });
+        builder.addDoubleProperty("feedforward/g", () -> this.feedforward.getKg(), (double value) -> {
+            System.out.println("Set g");
+            this.feedforward = new ElevatorFeedforward(
+                this.feedforward.getKs(), 
+                value, 
+                this.feedforward.getKv(), 
+                this.feedforward.getKa(), 
+                this.feedforward.getDt()
+            );
+        });
+        builder.addDoubleProperty("feedforward/v", () -> this.feedforward.getKv(), (double value) -> {
+            this.feedforward = new ElevatorFeedforward(
+                this.feedforward.getKs(), 
+                this.feedforward.getKg(), 
+                value, 
+                this.feedforward.getKa(), 
+                this.feedforward.getDt()
+            );
+        });
+        builder.addDoubleProperty("feedforward/a", () -> this.feedforward.getKa(), (double value) -> {
+            this.feedforward = new ElevatorFeedforward(
+                this.feedforward.getKs(), 
+                this.feedforward.getKg(), 
+                this.feedforward.getKv(), 
+                value, 
+                this.feedforward.getDt()
+            );
+        });
         builder.addDoubleProperty("measuredHeight", () -> this.getMeasuredHeight(), null);
         builder.addDoubleProperty("heightSetpoint", () -> this.getHeightSetpoint(), null);
-        builder.addDoubleArrayProperty("tuning", () -> new double[] {
+        builder.addDoubleProperty("measuredVelocity", () -> this.getMeasuredVelocity(), null);
+        builder.addDoubleProperty("velocitySetpoint", () -> this.getVelocitySetpoint(), null);
+        builder.addDoubleArrayProperty("positionTuning", () -> new double[] {
             this.getMeasuredHeight(),
             this.getHeightSetpoint()
+        }, null);
+        builder.addDoubleArrayProperty("velocityTuning", () -> new double[] {
+            this.getMeasuredVelocity(),
+            this.getVelocitySetpoint()
         }, null);
     }
 }

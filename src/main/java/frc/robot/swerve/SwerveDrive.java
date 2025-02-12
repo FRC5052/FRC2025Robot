@@ -68,6 +68,7 @@ public class SwerveDrive implements Sendable {
     private final SwerveModulePosition[] wheelPositions;
     private final SwerveModulePosition[] wheelDeltaPositions;
     private Optional<PowerDistribution> powerDistribution = Optional.empty();
+    private boolean enabled = true;
 
     public static Builder builder() {
         return new Builder();
@@ -362,6 +363,18 @@ public class SwerveDrive implements Sendable {
         return this.imu.getHeading(unit);
     }
 
+    public void enable() {
+        this.enabled = true;
+    }
+
+    public void disable() {
+        this.enabled = false;
+    }
+
+    public boolean isEnabled() {
+        return this.enabled;
+    }
+
     /**
      * Sets the targeted drive speed to the given values.
      * @param x The desired X speed. The value should be normalized (-1 to 1).
@@ -564,6 +577,8 @@ public class SwerveDrive implements Sendable {
      * Updates the internal logic of this swerve drive. This should be called in a command or subsystem's periodic function.
      */
     public void update() {
+        if (!this.isEnabled()) return;
+
         this.speeds = new ChassisSpeeds(
             SwerveUtil.limitAccelAndSpeed(this.targetSpeeds.vxMetersPerSecond, this.speeds.vxMetersPerSecond, Robot.kDefaultPeriod, this.maxDriveSpeed, this.maxDriveAccel),
             SwerveUtil.limitAccelAndSpeed(this.targetSpeeds.vyMetersPerSecond, this.speeds.vyMetersPerSecond, Robot.kDefaultPeriod, this.maxDriveSpeed, this.maxDriveAccel), 
@@ -627,7 +642,7 @@ public class SwerveDrive implements Sendable {
         builder.addDoubleArrayProperty("powDist/moduleCurrents", () -> this.getPowerDistribution().map((PowerDistribution powDist) -> {
             double[] vals = new double[powDist.getNumChannels()];
             for (int i = 0; i < vals.length; i++) {
-                vals[i] = powDist.getCurrent(i);
+                // vals[i] = powDist.getCurrent(i);
             }
             return vals;
         }).orElse(new double[0]), null);

@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import java.util.Optional;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorLevel;
 
@@ -32,6 +33,24 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public Optional<ElevatorLevel> prevLevel() {
         return elevatorSubsystem.getLevelSetpoint().map((ElevatorLevel level) -> level.prev());
+    }
+
+    public Command score(ElevatorLevel level) {
+        Command scoreCommand = new Command() {
+            @Override
+            public void initialize() {
+                setLevel(level);
+            }
+
+            @Override
+            public void execute() {
+                if (Math.abs(getLevel().orElse(ElevatorLevel.Home).height() - level.height()) < 0.1) {
+                    // Set claw subsystem to score
+                }
+            }
+        };
+
+        return scoreCommand;
     }
 
     @Override
