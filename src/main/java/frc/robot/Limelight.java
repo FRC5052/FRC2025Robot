@@ -1,11 +1,14 @@
 package frc.robot;
 
+import java.lang.StackWalker.Option;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -53,6 +56,7 @@ public class Limelight {
         return hasTarget() ? OptionalInt.of((int)limelightTable.getEntry("tid").getInteger(0)) : OptionalInt.empty();
     }
 
+
     public Twist3d getCameraOffset() {
         double[] poseArray = limelightTable.getEntry("camerapose_robotspace").getDoubleArray(new double[6]);
         return new Twist3d(
@@ -94,5 +98,33 @@ public class Limelight {
             0.0,
             0.0
         });
+    }
+
+    // private Pose2d getRobotSpaceTargetPose(DistanceUnit distanceUnit) {
+    //     double[] poseArray = limelightTable.getEntry("targetpose_robotspace").getDoubleArray(new double[6]);
+    //     Pose2d aprilTagPose = new Pose2d(distanceUnit.convertFrom(poseArray[0], Meters), distanceUnit.convertFrom(poseArray[1], Meters), new Rotation2d(Radians.convertFrom(poseArray[4], Degrees)));
+    //     return aprilTagPose;
+    // }
+
+    private static double[] getPoseArray() {
+        double[] poseArray = limelightTable.getEntry("targetpose_robotspace").getDoubleArray(new double[6]);
+        return poseArray;
+    }
+
+    private static Pose2d getFieldCentricTagPose(Pose2d currentPose, DistanceUnit distanceUnit) {
+        double[] poseArray = getPoseArray();
+        Transform2d transformationToTag = new Transform2d(distanceUnit.convertFrom(poseArray[0], Meters), distanceUnit.convertFrom(poseArray[1], Meters), new Rotation2d(Radians.convertFrom(poseArray[4], Degrees)));
+        Pose2d aprilTagPose = currentPose.plus(transformationToTag);
+        return aprilTagPose;
+    }
+
+    public static Optional<Pose2d> getScoringPose(Pose2d currentPose, Transform2d offset, DistanceUnit distanceUnit) {
+        if (hasTarget()) {
+            Pose2d aprilTagPose = getFieldCentricTagPose(currentPose, distanceUnit);
+            Pose2d targetPose = aprilTagPose.plus(offset);
+            return Optional.of(targetPose);
+        } else {
+            return Optional.empty();
+        }
     }
 }

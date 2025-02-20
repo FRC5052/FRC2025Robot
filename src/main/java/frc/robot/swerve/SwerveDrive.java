@@ -40,7 +40,9 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Limelight;
 import frc.robot.Robot;
 import frc.robot.swerve.SwerveModule;
 
@@ -54,6 +56,7 @@ public class SwerveDrive implements Sendable {
     private ChassisSpeeds targetSpeeds = new ChassisSpeeds();
     private Optional<Rotation2d> targetHeading = Optional.empty();
     private Field2d field = new Field2d();
+    private FieldObject2d tagTarget;
     private boolean poseOverriden = false;
     private double maxDriveSpeed = 0.0;
     private double maxTurnSpeed = 0.0;
@@ -129,6 +132,7 @@ public class SwerveDrive implements Sendable {
             this.pose
         );
         this.field.setRobotPose(this.pose);
+        tagTarget = field.getObject("tagTarget");
         this.imu.zeroHeading();
         SmartDashboard.putData("field", this.field);
         SmartDashboard.putData("swerveDrive/drivePID", this.moduleDriveController);
@@ -622,6 +626,14 @@ public class SwerveDrive implements Sendable {
             );
         }
         this.field.setRobotPose(this.pose);
+        this.tagTarget.setPose(
+            Limelight.getScoringPose(
+                getPose(), 
+                new Transform2d(-5,0, new Rotation2d()),
+                Meter
+            ).orElse(getPose())
+        );
+
     }
 
     @Override

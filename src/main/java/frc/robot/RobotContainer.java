@@ -44,6 +44,7 @@ import edu.wpi.first.hal.REVPHJNI;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -158,6 +159,28 @@ public class RobotContainer {
     m_secondaryController.b().whileTrue(new InstantCommand(() -> m_intakeSubsystem.setLevel(m_intakeSubsystem.prevLevel().get())));
 
     m_secondaryController.y().onTrue(new InstantCommand(() -> m_intakeSubsystem.elevatorSubsystem.resetLevel()));
+
+    m_secondaryController.leftTrigger().whileTrue( 
+      new InstantCommand(() -> System.out.println(m_swerveDriveSubsystem.getSwerveDrive().getPose() +  " | " + Limelight.getScoringPose(
+        m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
+        new Transform2d(-5,0, new Rotation2d()),
+        Meter
+      ).orElse(m_swerveDriveSubsystem.getSwerveDrive().getPose())
+    ))
+      // AutoBuilder.pathfindToPose(
+      //   Limelight.getScoringPose(
+      //     m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
+      //     new Transform2d(-5,0, new Rotation2d()),
+      //     Meter
+      //   ).orElse(m_swerveDriveSubsystem.getSwerveDrive().getPose()),
+      //   new PathConstraints(
+      //     this.m_swerveDriveSubsystem.getSwerveDrive().getMaxDriveSpeed(MetersPerSecond), 
+      //     this.m_swerveDriveSubsystem.getSwerveDrive().getMaxDriveAccel(MetersPerSecondPerSecond), 
+      //     this.m_swerveDriveSubsystem.getSwerveDrive().getMaxTurnSpeed(RadiansPerSecond), 
+      //     this.m_swerveDriveSubsystem.getSwerveDrive().getMaxTurnAccel(RadiansPerSecond.per(Second))
+      //   )
+      // )
+    );
 
     m_driverController.button(7).whileTrue(new Command() {
       private boolean on = true;

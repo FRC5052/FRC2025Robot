@@ -6,24 +6,28 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ClawConstants;
-import frc.robot.Constants.ElevatorConstants;
 
 public class ClawSubsystem extends SubsystemBase {
     // private SparkMax pivotMotor;
     // private SparkMax intakeMotor;
     // private ProfiledPIDController pid;
-    // ClawPosition clawPosition;
+    // private ClawPosition clawPosition;
+    // private DigitalInput intakeLimit;
+
 
     public ClawSubsystem() {
         // this.pivotMotor = new SparkMax(ClawConstants.kPivotMotorID, MotorType.kBrushless);
         // this.intakeMotor = new SparkMax(ClawConstants.kIntakeMotorID, MotorType.kBrushless);
 
-        // pid = new ProfiledPIDController(ClawConstants.kP, ClawConstants.kI, ClawConstants.kD, new TrapezoidProfile.Constraints(ClawConstants.kMaxVelocity, ClawConstants.kMaxAcceleration));
+        // this.intakeLimit = new DigitalInput(ClawConstants.kLimitSwitchPort);
+
+        // this.pid = new ProfiledPIDController(ClawConstants.kP, ClawConstants.kI, ClawConstants.kD, new TrapezoidProfile.Constraints(ClawConstants.kMaxVelocity, ClawConstants.kMaxAcceleration));
         
-        // clawPosition = ClawPosition.Idle;
+        // this.clawPosition = ClawPosition.Idle;
 
         // SmartDashboard.putData("elevator", this);
         // SmartDashboard.putData("elevator/feedback", this.pid);
@@ -75,6 +79,21 @@ public class ClawSubsystem extends SubsystemBase {
     //     this.intakeMotor.set(velocity);
     // }
 
+    // public void scoreCoral() {
+    //     if(!intakeLimit.get()) {
+    //         setIntakeVelocity(-ClawConstants.kIntakeVelocity);
+    //     }
+    // }
+
+    // public void intakeCoral() {
+    //     if(intakeLimit.get()) {
+    //         setIntakeVelocity(ClawConstants.kIntakeVelocity);
+    //     }
+    // }
+
+    // public void resetIntake() {
+    //     setIntakeVelocity(0);
+    // }
 
     // public double getPositionSetpoint() {
     //     return pid.getGoal().position;
@@ -100,5 +119,9 @@ public class ClawSubsystem extends SubsystemBase {
     // @Override
     // public void periodic() {
     //     setMotor();
+    //     // If limit switch activated, make sure velocity can only be set to negative (ejecting coral)
+    //     if(!intakeLimit.get()) {
+    //         setIntakeVelocity(Math.min(intakeMotor.getEncoder().getVelocity(), 0));
+    //     }
     // }
 }
