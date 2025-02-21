@@ -2,16 +2,23 @@ package frc.robot.swerve;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.stream.Collectors;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -629,11 +636,10 @@ public class SwerveDrive implements Sendable {
         this.tagTarget.setPose(
             Limelight.getScoringPose(
                 getPose(), 
-                new Transform2d(-5,0, new Rotation2d()),
+                new Transform2d(0.5,0, new Rotation2d()),
                 Meter
             ).orElse(getPose())
         );
-
     }
 
     @Override

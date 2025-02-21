@@ -115,15 +115,22 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         this.swerveDrive::getPose, 
         this.swerveDrive::setPose, 
         this.swerveDrive::getActualSpeeds,
-        (ChassisSpeeds speeds) -> this.swerveDrive.drive(
-            MathUtil.clamp(-speeds.vxMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
-            MathUtil.clamp(-speeds.vyMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
-            MathUtil.clamp(-speeds.omegaRadiansPerSecond/this.swerveDrive.getMaxTurnSpeed(RadiansPerSecond), -1.0, 1.0),
+        (ChassisSpeeds speeds) -> {
+          double xOutput = -speeds.vxMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond);
+          double yOutput = -speeds.vyMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond);
+          double hOutput = -speeds.omegaRadiansPerSecond/this.swerveDrive.getMaxTurnSpeed(RadiansPerSecond);
+
+          System.out.printf("driving %f, %f, %f\n", xOutput, yOutput, hOutput);
+          this.swerveDrive.drive(
+            MathUtil.clamp(xOutput, -1.0, 1.0),
+            MathUtil.clamp(yOutput, -1.0, 1.0),
+            MathUtil.clamp(hOutput, -1.0, 1.0),
             HeadingControlMode.kSpeedOnly,
             Optional.of(false)
-        ), 
+          );
+        }, 
         new PPHolonomicDriveController(
-          new PIDConstants(5.0, 0.0, 0.0),
+          new PIDConstants(1.0, 0.0, 0.0),
           new PIDConstants(2.0, 0.0, 0.2)
         ), 
         RobotConfig.fromGUISettings(), 
@@ -141,33 +148,6 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       System.out.println("IO or Parse exception");
       e.printStackTrace();
     }
-  //   AutoBuilder.configureHolonomic(
-  //       this.swerveDrive::getPose, 
-  //       this.swerveDrive::setPose, 
-  //       this.swerveDrive::getActualSpeeds, 
-  //       (ChassisSpeeds speeds) -> this.swerveDrive.drive(
-  //         MathUtil.clamp(-speeds.vxMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
-  //         MathUtil.clamp(-speeds.vyMetersPerSecond/this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), -1.0, 1.0),
-  //         MathUtil.clamp(-speeds.omegaRadiansPerSecond/this.swerveDrive.getMaxTurnSpeed(RadiansPerSecond), -1.0, 1.0),
-  //         HeadingControlMode.kSpeedOnly,
-  //         Optional.of(false)
-  //       ),
-  //       new HolonomicPathFollowerConfig(
-  //         new PIDConstants(5.0, 0.0, 0.0),
-  //         new PIDConstants(2.0, 0.0, 0.2),
-  //         this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), 
-  //         maxDistance, 
-  //         new ReplanningConfig()
-  //       ),
-  //       () -> {
-  //         var alliance = DriverStation.getAlliance();
-  //         if (alliance.isPresent()) {
-  //           return alliance.get() == DriverStation.Alliance.Red;
-  //         }
-  //         return false;
-  //       }, 
-  //       this
-  //   );
   }
 
   public void resetHeading() {
@@ -203,7 +183,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       pose, 
       new PathConstraints(
         this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), 
-        this.swerveDrive.getMaxDriveAccel(MetersPerSecondPerSecond), 
+        this.swerveDrive.getMaxDriveAccel(MetersPerSecondPerSecond) / 2.0, 
         this.swerveDrive.getMaxTurnSpeed(RadiansPerSecond), 
         this.swerveDrive.getMaxTurnAccel(RadiansPerSecond.per(Second))
       )
@@ -214,7 +194,9 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     if (this.pathfindingCommand != null && this.pathfindingCommand.isScheduled()) {
-      
+      if (this.pathfindingCommand.isFinished()) {
+        this.pathfindingCommand = null;
+      }
     } else if (DriverStation.isTeleopEnabled()) {
       double x = Math.pow(MathUtil.applyDeadband(this.xAxis.getAsDouble(), 0.1), 3);
       double y = Math.pow(MathUtil.applyDeadband(this.yAxis.getAsDouble(), 0.1), 3);

@@ -120,7 +120,7 @@ public class RobotContainer {
     this.autoChooser = AutoBuilder.buildAutoChooser();
     
 
-    Shuffleboard.getTab("Driver Panel").add("Intake Camera", CameraServer.startAutomaticCapture()).withSize(6, 5).withPosition(0, 0);
+    // Shuffleboard.getTab("Driver Panel").add("Intake Camera", CameraServer.startAutomaticCapture()).withSize(6, 5).withPosition(0, 0);
     Shuffleboard.getTab("Driver Panel").add("Auto Chooser", this.autoChooser).withSize(2, 1).withPosition(6, 0);
     
     configureBindings();
@@ -160,27 +160,14 @@ public class RobotContainer {
 
     m_secondaryController.y().onTrue(new InstantCommand(() -> m_intakeSubsystem.elevatorSubsystem.resetLevel()));
 
-    m_secondaryController.leftTrigger().whileTrue( 
-      new InstantCommand(() -> System.out.println(m_swerveDriveSubsystem.getSwerveDrive().getPose() +  " | " + Limelight.getScoringPose(
+    m_secondaryController.leftTrigger().onTrue(new InstantCommand(() -> {
+      Optional<Pose2d> targetPose = Limelight.getScoringPose(
         m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-        new Transform2d(-5,0, new Rotation2d()),
+        new Transform2d(0.2,0, new Rotation2d(Math.PI)),
         Meter
-      ).orElse(m_swerveDriveSubsystem.getSwerveDrive().getPose())
-    ))
-      // AutoBuilder.pathfindToPose(
-      //   Limelight.getScoringPose(
-      //     m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-      //     new Transform2d(-5,0, new Rotation2d()),
-      //     Meter
-      //   ).orElse(m_swerveDriveSubsystem.getSwerveDrive().getPose()),
-      //   new PathConstraints(
-      //     this.m_swerveDriveSubsystem.getSwerveDrive().getMaxDriveSpeed(MetersPerSecond), 
-      //     this.m_swerveDriveSubsystem.getSwerveDrive().getMaxDriveAccel(MetersPerSecondPerSecond), 
-      //     this.m_swerveDriveSubsystem.getSwerveDrive().getMaxTurnSpeed(RadiansPerSecond), 
-      //     this.m_swerveDriveSubsystem.getSwerveDrive().getMaxTurnAccel(RadiansPerSecond.per(Second))
-      //   )
-      // )
-    );
+      );
+      targetPose.ifPresent((Pose2d pose) -> m_swerveDriveSubsystem.setTargetPose(pose));
+    }));
 
     m_driverController.button(7).whileTrue(new Command() {
       private boolean on = true;
