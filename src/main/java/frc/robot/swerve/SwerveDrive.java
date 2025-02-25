@@ -51,6 +51,7 @@ import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Limelight;
 import frc.robot.Robot;
+import frc.robot.Constants.OperatorConstants;
 import frc.robot.swerve.SwerveModule;
 
 public class SwerveDrive implements Sendable {
@@ -636,7 +637,7 @@ public class SwerveDrive implements Sendable {
         this.tagTarget.setPose(
             Limelight.getScoringPose(
                 getPose(), 
-                new Transform2d(0.5,0, new Rotation2d()),
+                OperatorConstants.kScoreOffset,
                 Meter
             ).orElse(getPose())
         );

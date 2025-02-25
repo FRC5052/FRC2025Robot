@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
 /**
@@ -19,6 +21,7 @@ public final class Constants {
     public static final int kDriverControllerPort = 0;
     public static final int kLEDPort = 1; //TODO change to whatever pwm port the led ends up using
     public static final int kLEDLength = 100;
+    public static final Transform2d kScoreOffset = new Transform2d(0.2,0, new Rotation2d(Math.PI));
   }
   public static class ElevatorConstants {
     // Motor CAN IDs

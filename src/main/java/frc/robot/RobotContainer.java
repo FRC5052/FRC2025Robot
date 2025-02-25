@@ -7,10 +7,12 @@ package frc.robot;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.subsystems.AddressableLEDSubsystem;
+import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.ColorSensorSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
+import frc.robot.subsystems.ClimbSubsystem.ClimbPosition;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorLevel;
 
 import static edu.wpi.first.units.Units.*;
@@ -86,6 +88,7 @@ public class RobotContainer {
 
   public final SwerveDriveSubsystem m_swerveDriveSubsystem;
   public final IntakeSubsystem m_intakeSubsystem;
+  public final ClimbSubsystem m_climbSubsystem;
   // public final AddressableLEDSubsystem m_addressableLEDSubsystem;
   // public final ColorSensorSubsystem m_colorSensorSubsystem;
 
@@ -116,6 +119,8 @@ public class RobotContainer {
       );
       
     this.m_intakeSubsystem = new IntakeSubsystem();
+
+    this.m_climbSubsystem = new ClimbSubsystem();
 
     this.autoChooser = AutoBuilder.buildAutoChooser();
     
@@ -163,11 +168,24 @@ public class RobotContainer {
     m_secondaryController.leftTrigger().onTrue(new InstantCommand(() -> {
       Optional<Pose2d> targetPose = Limelight.getScoringPose(
         m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-        new Transform2d(0.2,0, new Rotation2d(Math.PI)),
+        OperatorConstants.kScoreOffset,
         Meter
       );
       targetPose.ifPresent((Pose2d pose) -> m_swerveDriveSubsystem.setTargetPose(pose));
-    }));
+    }).until(() -> m_secondaryController.leftTrigger().getAsBoolean()==true).andThen(new InstantCommand(() -> {
+      m_swerveDriveSubsystem.setTargetPose(m_swerveDriveSubsystem.getSwerveDrive().getPose());
+    })));
+
+    m_secondaryController.x().whileTrue(new Command() {
+      private ClimbPosition position = ClimbPosition.Idle;
+
+      @Override
+      public void initialize() {
+        position = position.next();
+        m_climbSubsystem.setPositionSetpoint(position);
+        System.out.println(position);
+      }
+    });
 
     m_driverController.button(7).whileTrue(new Command() {
       private boolean on = true;
