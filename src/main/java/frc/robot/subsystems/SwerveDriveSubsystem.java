@@ -130,7 +130,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
           );
         }, 
         new PPHolonomicDriveController(
-          new PIDConstants(1.0, 0.0, 0.0),
+          new PIDConstants(0.5, 0.0, 0.0),
           new PIDConstants(2.0, 0.0, 0.2)
         ), 
         RobotConfig.fromGUISettings(), 
@@ -182,8 +182,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     this.pathfindingCommand = AutoBuilder.pathfindToPose(
       pose, 
       new PathConstraints(
-        this.swerveDrive.getMaxDriveSpeed(MetersPerSecond), 
-        this.swerveDrive.getMaxDriveAccel(MetersPerSecondPerSecond) / 2.0, 
+        this.swerveDrive.getMaxDriveSpeed(MetersPerSecond) / 2.0, 
+        this.swerveDrive.getMaxDriveAccel(MetersPerSecondPerSecond) / 4.0, 
         this.swerveDrive.getMaxTurnSpeed(RadiansPerSecond), 
         this.swerveDrive.getMaxTurnAccel(RadiansPerSecond.per(Second))
       )

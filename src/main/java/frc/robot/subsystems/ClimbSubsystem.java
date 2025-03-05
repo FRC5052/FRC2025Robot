@@ -15,8 +15,8 @@ public class ClimbSubsystem extends SubsystemBase {
         0.0, 
         0.0, 
         new Constraints(
-            64.0, 
-            1.0
+            256.0, 
+            512.0
         )
     );
 
@@ -37,12 +37,13 @@ public class ClimbSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        // System.out.println(this.climbMotor.getEncoder().getPosition());
         this.climbMotor.set(this.pid.calculate(this.getActualPosition()));
     }
 
     public enum ClimbPosition {
         Idle(0.0),
-        Score(32.0);
+        Score(128.0);
 
         private final double position;
 

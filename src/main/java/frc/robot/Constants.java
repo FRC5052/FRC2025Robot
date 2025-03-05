@@ -21,7 +21,7 @@ public final class Constants {
     public static final int kDriverControllerPort = 0;
     public static final int kLEDPort = 1; //TODO change to whatever pwm port the led ends up using
     public static final int kLEDLength = 100;
-    public static final Transform2d kScoreOffset = new Transform2d(0.2,0, new Rotation2d(Math.PI));
+    public static final Transform2d kScoreOffset = new Transform2d(1,0, new Rotation2d(Math.PI));
   }
   public static class ElevatorConstants {
     // Motor CAN IDs
@@ -38,7 +38,7 @@ public final class Constants {
     public static final double kA = 0;
 
     public static final double kMaxVelocity = 1920.0;
-    public static final double kMaxAcceleration = 3840.0;
+    public static final double kMaxAcceleration = 960.0;
 
     // Zero and max position of motor (rotations)
     public static final double bottom = 0;
@@ -54,8 +54,26 @@ public final class Constants {
   //TODO: set these later
   public static class ClawConstants {
     // Motor CAN IDs
-    public static final int kPivotMotorID = 0; 
-    public static final int kIntakeMotorID = 0;
+    public static final int kPivotMotorID = 16; 
+    public static final int kIntakeMotorID = 17;
+    public static final int kLimitSwitchPort = 0;
+    // PID Constants
+    public static final double kP = 0;
+    public static final double kI = 0;
+    public static final double kD = 0;
+
+    public static final double kMaxVelocity = 0;
+    public static final double kMaxAcceleration = 0;
+    public static final double kIntakeVelocity = 0;
+    // Claw Positions
+    public static final double kIdlePosition = 0;
+    public static final double kScorePosition = 0;
+  }
+
+  public static class AlgaeIntakeConstants {
+    // Motor CAN IDs
+    public static final int kPivotMotorID = 18; 
+    public static final int kIntakeMotorID = 19;
     public static final int kLimitSwitchPort = 0;
     // PID Constants
     public static final double kP = 0;

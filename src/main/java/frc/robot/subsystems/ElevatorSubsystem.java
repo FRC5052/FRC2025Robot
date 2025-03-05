@@ -94,7 +94,8 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
         L1(20.0),
         L2(30.0),
         Intake(40.0),
-        L3(50.0);
+        L3(45.0),
+        L4(ElevatorConstants.top);
 
         private double level;
 
@@ -119,7 +120,9 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
                 case Intake:
                     return L3;
                 case L3:
-                    return L3;
+                    return L4;
+                case L4:
+                    return L4;
                 default:
                     return null;
             }
@@ -139,6 +142,8 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
                     return L2;
                 case L3:
                     return Intake;
+                case L4:
+                    return L3;
                 default:
                     return null;
             }
@@ -210,6 +215,7 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
     @Override
     public void periodic() {
+        
         // System.out.println(feedforward.getKg() + " " + feedback.getP());
         if(!bottomLimit.get()){
             resetLevel();

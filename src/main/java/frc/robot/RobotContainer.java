@@ -122,6 +122,8 @@ public class RobotContainer {
 
     this.m_climbSubsystem = new ClimbSubsystem();
 
+    this.m_climbSubsystem.register();
+
     this.autoChooser = AutoBuilder.buildAutoChooser();
     
 
@@ -172,9 +174,7 @@ public class RobotContainer {
         Meter
       );
       targetPose.ifPresent((Pose2d pose) -> m_swerveDriveSubsystem.setTargetPose(pose));
-    }).until(() -> m_secondaryController.leftTrigger().getAsBoolean()==true).andThen(new InstantCommand(() -> {
-      m_swerveDriveSubsystem.setTargetPose(m_swerveDriveSubsystem.getSwerveDrive().getPose());
-    })));
+    }));
 
     m_secondaryController.x().whileTrue(new Command() {
       private ClimbPosition position = ClimbPosition.Idle;
@@ -183,7 +183,6 @@ public class RobotContainer {
       public void initialize() {
         position = position.next();
         m_climbSubsystem.setPositionSetpoint(position);
-        System.out.println(position);
       }
     });
 
