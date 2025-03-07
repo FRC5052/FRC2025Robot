@@ -7,8 +7,10 @@ package frc.robot;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.subsystems.AddressableLEDSubsystem;
+import frc.robot.subsystems.ClawSubsystem;
 import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.ColorSensorSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
@@ -87,7 +89,8 @@ public class RobotContainer {
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
 
   public final SwerveDriveSubsystem m_swerveDriveSubsystem;
-  public final IntakeSubsystem m_intakeSubsystem;
+  public final ElevatorSubsystem m_elevatorSubsystem;
+  public final ClawSubsystem m_clawSubsystem;
   public final ClimbSubsystem m_climbSubsystem;
   // public final AddressableLEDSubsystem m_addressableLEDSubsystem;
   // public final ColorSensorSubsystem m_colorSensorSubsystem;
@@ -118,7 +121,8 @@ public class RobotContainer {
       () -> -this.m_driverController.getRawAxis(2)
       );
       
-    this.m_intakeSubsystem = new IntakeSubsystem();
+    this.m_elevatorSubsystem = new ElevatorSubsystem();
+    this.m_clawSubsystem = new ClawSubsystem();
 
     this.m_climbSubsystem = new ClimbSubsystem();
 
@@ -161,11 +165,11 @@ public class RobotContainer {
 
     secondControllerCommand.setName("Teleop Intake");
 
-    m_secondaryController.a().whileTrue(new InstantCommand(() -> m_intakeSubsystem.setLevel(m_intakeSubsystem.nextLevel().get())));
+    m_secondaryController.a().whileTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().next())));
 
-    m_secondaryController.b().whileTrue(new InstantCommand(() -> m_intakeSubsystem.setLevel(m_intakeSubsystem.prevLevel().get())));
+    m_secondaryController.b().whileTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().prev())));
 
-    m_secondaryController.y().onTrue(new InstantCommand(() -> m_intakeSubsystem.elevatorSubsystem.resetLevel()));
+    m_secondaryController.y().onTrue(new InstantCommand(() -> m_elevatorSubsystem.resetLevel()));
 
     m_secondaryController.leftTrigger().onTrue(new InstantCommand(() -> {
       Optional<Pose2d> targetPose = Limelight.getScoringPose(
@@ -175,6 +179,30 @@ public class RobotContainer {
       );
       targetPose.ifPresent((Pose2d pose) -> m_swerveDriveSubsystem.setTargetPose(pose));
     }));
+
+    m_secondaryController.povUp().whileTrue(new Command() {
+      @Override
+      public void initialize() {
+        m_clawSubsystem.scoreCoral();
+      }
+
+      @Override
+      public void end(boolean interrupted) {
+        m_clawSubsystem.resetIntake();
+      }
+    });
+
+    m_secondaryController.povDown().whileTrue(new Command() {
+      @Override
+      public void initialize() {
+        m_clawSubsystem.intakeCoral();
+      }
+
+      @Override
+      public void end(boolean interrupted) {
+        m_clawSubsystem.resetIntake();
+      }
+    });
 
     m_secondaryController.x().whileTrue(new Command() {
       private ClimbPosition position = ClimbPosition.Idle;

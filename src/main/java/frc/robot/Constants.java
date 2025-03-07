@@ -56,7 +56,7 @@ public final class Constants {
     // Motor CAN IDs
     public static final int kPivotMotorID = 16; 
     public static final int kIntakeMotorID = 17;
-    public static final int kLimitSwitchPort = 0;
+    public static final int kLimitSwitchPort = 1;
     // PID Constants
     public static final double kP = 0;
     public static final double kI = 0;
@@ -64,7 +64,7 @@ public final class Constants {
 
     public static final double kMaxVelocity = 0;
     public static final double kMaxAcceleration = 0;
-    public static final double kIntakeVelocity = 0;
+    public static final double kIntakeVelocity = 0.2;
     // Claw Positions
     public static final double kIdlePosition = 0;
     public static final double kScorePosition = 0;

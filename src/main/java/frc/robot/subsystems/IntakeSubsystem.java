@@ -7,6 +7,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 // import frc.robot.subsystems.ClawSubsystem.ClawPosition;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorLevel;
 
+// For readability, and to remove unnecessary overhead, the subsystems in this class have been moved into RobotContainer. - Andrew
+@Deprecated
 public class IntakeSubsystem extends SubsystemBase {
     public final ElevatorSubsystem elevatorSubsystem;
     public final ClawSubsystem clawSubsystem;
