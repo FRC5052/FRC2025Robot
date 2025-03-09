@@ -4,9 +4,11 @@
 
 package frc.robot;
 
+import frc.robot.Constants.LEDConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.subsystems.AddressableLEDSubsystem;
+import frc.robot.subsystems.AddressableLEDSubsystem.AddressableLEDSlice;
 import frc.robot.subsystems.ClawSubsystem;
 import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.ColorSensorSubsystem;
@@ -14,7 +16,7 @@ import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
-import frc.robot.subsystems.ClimbSubsystem.ClimbPosition;
+// import frc.robot.subsystems.ClimbSubsystem.ClimbPosition;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorLevel;
 
 import static edu.wpi.first.units.Units.*;
@@ -92,7 +94,7 @@ public class RobotContainer {
   public final ElevatorSubsystem m_elevatorSubsystem;
   public final ClawSubsystem m_clawSubsystem;
   public final ClimbSubsystem m_climbSubsystem;
-  // public final AddressableLEDSubsystem m_addressableLEDSubsystem;
+  public final AddressableLEDSubsystem m_ledSubsystem;
   // public final ColorSensorSubsystem m_colorSensorSubsystem;
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
@@ -114,6 +116,8 @@ public class RobotContainer {
   public RobotContainer() {
     // Configure the trigger bindings
     instance = this;
+
+    m_ledSubsystem = new AddressableLEDSubsystem(LEDConstants.kLEDPort, LEDConstants.kLEDLength);
 
     this.m_swerveDriveSubsystem = new SwerveDriveSubsystem(
       () -> this.m_driverController.getRawAxis(1), 
@@ -180,39 +184,39 @@ public class RobotContainer {
       targetPose.ifPresent((Pose2d pose) -> m_swerveDriveSubsystem.setTargetPose(pose));
     }));
 
-    m_secondaryController.povUp().whileTrue(new Command() {
-      @Override
-      public void initialize() {
-        m_clawSubsystem.scoreCoral();
-      }
+    // m_secondaryController.povUp().whileTrue(new Command() {
+    //   @Override
+    //   public void initialize() {
+    //     m_clawSubsystem.scoreCoral();
+    //   }
 
-      @Override
-      public void end(boolean interrupted) {
-        m_clawSubsystem.resetIntake();
-      }
-    });
+    //   @Override
+    //   public void end(boolean interrupted) {
+    //     m_clawSubsystem.resetIntake();
+    //   }
+    // });
 
-    m_secondaryController.povDown().whileTrue(new Command() {
-      @Override
-      public void initialize() {
-        m_clawSubsystem.intakeCoral();
-      }
+    // m_secondaryController.povDown().whileTrue(new Command() {
+    //   @Override
+    //   public void initialize() {
+    //     m_clawSubsystem.intakeCoral();
+    //   }
 
-      @Override
-      public void end(boolean interrupted) {
-        m_clawSubsystem.resetIntake();
-      }
-    });
+    //   @Override
+    //   public void end(boolean interrupted) {
+    //     m_clawSubsystem.resetIntake();
+    //   }
+    // });
 
-    m_secondaryController.x().whileTrue(new Command() {
-      private ClimbPosition position = ClimbPosition.Idle;
+    // m_secondaryController.x().whileTrue(new Command() {
+    //   private ClimbPosition position = ClimbPosition.Idle;
 
-      @Override
-      public void initialize() {
-        position = position.next();
-        m_climbSubsystem.setPositionSetpoint(position);
-      }
-    });
+    //   @Override
+    //   public void initialize() {
+    //     position = position.next();
+    //     m_climbSubsystem.setPositionSetpoint(position);
+    //   }
+    // });
 
     m_driverController.button(7).whileTrue(new Command() {
       private boolean on = true;
@@ -234,6 +238,30 @@ public class RobotContainer {
       }
     });
     
+
+    // LED Subsystem
+    AddressableLEDSlice leftSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDLeftSlice[0], LEDConstants.kLEDLeftSlice[1]-LEDConstants.kLEDLeftSlice[0]);
+    AddressableLEDSlice topSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDTopSlice[0], LEDConstants.kLEDTopSlice[1]-LEDConstants.kLEDTopSlice[0]);
+    AddressableLEDSlice rightSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDRightSlice[0], LEDConstants.kLEDRightSlice[1]-LEDConstants.kLEDRightSlice[0]);
+
+    Command ledDefaultCommand = new Command() {
+      private Timer timer = new Timer();
+
+      @Override
+      public void initialize() {
+        timer.start();
+      }
+
+      @Override
+      public void execute() {
+        leftSlice.setRainbow(timer);
+        topSlice.setRainbow(timer);
+        rightSlice.setRainbow(timer);
+        m_ledSubsystem.display();
+      };
+    };
+    ledDefaultCommand.addRequirements(m_ledSubsystem);
+    m_ledSubsystem.setDefaultCommand(ledDefaultCommand);
   }
 
   public void resetIntake() {

@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class AddressableLEDSubsystem extends SubsystemBase {
   private final AddressableLED led;
   private final AddressableLEDBuffer ledBuffer;
+  private final AddressableLEDSlice fullStrip;
   private final Color colorCorrection = new Color(1.0, 1.0, 1.0);
 
   public static class AddressableLEDSlice {
@@ -124,6 +125,8 @@ public class AddressableLEDSubsystem extends SubsystemBase {
     led.setLength(ledBuffer.getLength());
 
     led.start();
+
+    fullStrip = createSlice();
   }
 
   private void set(int index, Color color) {
@@ -149,6 +152,74 @@ public class AddressableLEDSubsystem extends SubsystemBase {
 
   public int length() {
     return this.ledBuffer.getLength();
+  }
+
+  public AddressableLEDSlice getFullStrip() {
+    return fullStrip;
+  }
+
+  public Command getFillCommand(Color c) {
+    return new Command() {
+      private AddressableLEDSlice strip;
+
+      @Override
+      public void initialize() {
+        strip = getFullStrip();
+      }
+
+      @Override
+      public void execute() {
+          strip.fill(c);
+      }
+    };
+  }
+
+  public Command getFillCommand(AddressableLEDSlice targetSlice, Color c) {
+    return new Command() {
+      private AddressableLEDSlice slice;
+
+      @Override
+      public void initialize() {
+        slice = targetSlice;
+      }
+
+      @Override
+      public void execute() {
+          slice.fill(c);
+      }
+    };
+  }
+
+  public Command getFillCommand(int r, int g, int b) {
+    return new Command() {
+      private AddressableLEDSlice strip;
+
+      @Override
+      public void initialize() {
+        strip = getFullStrip();
+      }
+
+      @Override
+      public void execute() {
+          strip.setColor(r, g, b);
+      }
+    };
+  }
+
+  public Command getFillCommand(AddressableLEDSlice targetSlice, int r, int g, int b) {
+    return new Command() {
+      private AddressableLEDSlice slice;
+
+      @Override
+      public void initialize() {
+        slice = targetSlice;
+      }
+
+      @Override
+      public void execute() {
+          slice.setColor(r, g, b);
+      }
+    };
   }
   
   /**
