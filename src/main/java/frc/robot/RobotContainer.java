@@ -4,11 +4,16 @@
 
 package frc.robot;
 
+import frc.robot.Constants.ElevatorConstants;
 import frc.robot.Constants.LEDConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.subsystems.AddressableLEDSubsystem;
+import frc.robot.subsystems.AlgaeIntakeSubsystem;
 import frc.robot.subsystems.AddressableLEDSubsystem.AddressableLEDSlice;
+import frc.robot.subsystems.AlgaeIntakeSubsystem.AlgaeIntakePosition;
+import frc.robot.subsystems.ClawSubsystem.ClawPosition;
+import frc.robot.subsystems.ClimbSubsystem.ClimbPosition;
 import frc.robot.subsystems.ClawSubsystem;
 import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.ColorSensorSubsystem;
@@ -94,7 +99,11 @@ public class RobotContainer {
   public final ElevatorSubsystem m_elevatorSubsystem;
   public final ClawSubsystem m_clawSubsystem;
   public final ClimbSubsystem m_climbSubsystem;
+  public final AlgaeIntakeSubsystem m_algaeIntakeSubsystem;
   public final AddressableLEDSubsystem m_ledSubsystem;
+  private AddressableLEDSlice leftSlice;
+  private AddressableLEDSlice topSlice;
+  private AddressableLEDSlice rightSlice;
   // public final ColorSensorSubsystem m_colorSensorSubsystem;
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
@@ -118,6 +127,9 @@ public class RobotContainer {
     instance = this;
 
     m_ledSubsystem = new AddressableLEDSubsystem(LEDConstants.kLEDPort, LEDConstants.kLEDLength);
+    leftSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDLeftSlice[0], LEDConstants.kLEDLeftSlice[1]-LEDConstants.kLEDLeftSlice[0]);
+    topSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDTopSlice[0], LEDConstants.kLEDTopSlice[1]-LEDConstants.kLEDTopSlice[0]);
+    rightSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDRightSlice[0], LEDConstants.kLEDRightSlice[1]-LEDConstants.kLEDRightSlice[0]);
 
     this.m_swerveDriveSubsystem = new SwerveDriveSubsystem(
       () -> this.m_driverController.getRawAxis(1), 
@@ -126,10 +138,14 @@ public class RobotContainer {
       );
       
     this.m_elevatorSubsystem = new ElevatorSubsystem();
+    this.m_elevatorSubsystem.register();
+
     this.m_clawSubsystem = new ClawSubsystem();
+    this.m_clawSubsystem.register();
+
+    this.m_algaeIntakeSubsystem = new AlgaeIntakeSubsystem();
 
     this.m_climbSubsystem = new ClimbSubsystem();
-
     this.m_climbSubsystem.register();
 
     this.autoChooser = AutoBuilder.buildAutoChooser();
@@ -169,20 +185,112 @@ public class RobotContainer {
 
     secondControllerCommand.setName("Teleop Intake");
 
-    m_secondaryController.a().whileTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().next())));
+    Command ledElevatorHeightCommand = new Command() {
+      double height;
+      double setHeight;
 
-    m_secondaryController.b().whileTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().prev())));
+      @Override
+      public void initialize() {
+        height = m_elevatorSubsystem.getMeasuredHeight();
+        setHeight = m_elevatorSubsystem.getHeightSetpoint();
+      }
 
-    m_secondaryController.y().onTrue(new InstantCommand(() -> m_elevatorSubsystem.resetLevel()));
+      @Override
+      public void execute() {
+        if (height <= setHeight) {
+          leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kOrange, Color.kBlack);
+          leftSlice.setMeter(ElevatorConstants.top, height, Color.kRed, Color.kBlack);
+          rightSlice.setMeter(ElevatorConstants.top, setHeight, Color.kOrange, Color.kBlack);
+          rightSlice.setMeter(ElevatorConstants.top, height, Color.kRed, Color.kBlack);
+        } else {
+          leftSlice.setMeter(ElevatorConstants.top, height, Color.kOrange, Color.kBlack);
+          leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kRed, null);
+          rightSlice.setMeter(ElevatorConstants.top, height, Color.kOrange, Color.kBlack);
+          rightSlice.setMeter(ElevatorConstants.top, setHeight, Color.kRed, null);
+        }
+        height = m_elevatorSubsystem.getMeasuredHeight();
+        setHeight = m_elevatorSubsystem.getHeightSetpoint();
+      }
+    };
 
-    m_secondaryController.leftTrigger().onTrue(new InstantCommand(() -> {
-      Optional<Pose2d> targetPose = Limelight.getScoringPose(
-        m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-        OperatorConstants.kScoreOffset,
-        Meter
-      );
-      targetPose.ifPresent((Pose2d pose) -> m_swerveDriveSubsystem.setTargetPose(pose));
+    
+    Command scoreCoralCommand = new SequentialCommandGroup(
+      new InstantCommand(() -> m_clawSubsystem.scoreCoral()),
+      new WaitCommand(1.0),
+      new InstantCommand(() -> m_clawSubsystem.resetIntake())
+    );
+    scoreCoralCommand.addRequirements(m_clawSubsystem);
+
+    Command intakeCoralCommand = new InstantCommand(() -> m_clawSubsystem.intakeCoral(), m_clawSubsystem);
+
+    
+
+    InstantCommand resetClawCommand = new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle));
+    resetClawCommand.addRequirements(m_clawSubsystem);
+
+    // Increase Level
+    m_secondaryController.rightTrigger().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().next())));
+
+    // Decrease Level
+    m_secondaryController.leftTrigger().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().prev())));
+
+    // Reset Level
+    m_secondaryController.b().onTrue(new InstantCommand(() -> m_elevatorSubsystem.resetLevel()));
+
+    // Score Coral
+    m_secondaryController.a().onTrue(new InstantCommand(() -> {
+      if (m_clawSubsystem.getIntakeVelocity() < 0.0) {
+        System.out.println("Score");
+        intakeCoralCommand.cancel();
+        scoreCoralCommand.schedule();
+      } else {
+        System.out.println("Intake");
+        scoreCoralCommand.cancel();
+        intakeCoralCommand.schedule();
+      }
     }));
+
+    Command scoreAlgaeCommand = new Command() {
+      @Override
+      public void initialize() {
+        m_algaeIntakeSubsystem.getAlgaeIntakePosition().toggle();
+      }
+
+      @Override
+      public void execute() {
+          if (Math.abs(m_algaeIntakeSubsystem.getMeasuredPosition()-AlgaeIntakePosition.Score.position()) < 0.1) {
+              m_algaeIntakeSubsystem.scoreAlgae();
+          }
+      }
+
+      @Override
+      public void end(boolean interrupted) {
+          m_algaeIntakeSubsystem.resetIntake();
+          // if (Math.abs(m_elevatorSubsystem.getMeasuredHeight()-ElevatorLevel.L4.height()) < 0.1) {
+          //   m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle);
+          // }
+      }
+    };
+    // Score Algae
+    m_secondaryController.x().onTrue(scoreAlgaeCommand);
+
+    // Climb
+    m_secondaryController.povUp().onTrue(new InstantCommand(() -> m_climbSubsystem.setPositionSetpoint(ClimbPosition.Score)));
+
+    // Unclimb (Just in case) 
+    m_secondaryController.povDown().onTrue(new InstantCommand(() -> m_climbSubsystem.setPositionSetpoint(ClimbPosition.Idle)));
+
+    // m_driverController.button(1).onFalse(new InstantCommand(() -> {
+    //   Optional<Pose2d> targetPose = Limelight.getScoringPose(
+    //     m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
+    //     OperatorConstants.kScoreOffset,
+    //     Meter
+    //   );
+    //   targetPose.ifPresent((Pose2d pose) -> {
+    //     m_swerveDriveSubsystem.setTargetPose(pose);
+    //     topSlice.setColor(255, 255, 0);
+    //   });
+    // }));
 
     // m_secondaryController.povUp().whileTrue(new Command() {
     //   @Override
@@ -240,32 +348,28 @@ public class RobotContainer {
     
 
     // LED Subsystem
-    AddressableLEDSlice leftSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDLeftSlice[0], LEDConstants.kLEDLeftSlice[1]-LEDConstants.kLEDLeftSlice[0]);
-    AddressableLEDSlice topSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDTopSlice[0], LEDConstants.kLEDTopSlice[1]-LEDConstants.kLEDTopSlice[0]);
-    AddressableLEDSlice rightSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDRightSlice[0], LEDConstants.kLEDRightSlice[1]-LEDConstants.kLEDRightSlice[0]);
 
     Command ledDefaultCommand = new Command() {
-      private Timer timer = new Timer();
+      Timer timer = new Timer();
 
       @Override
       public void initialize() {
-        timer.start();
+          timer.start();
       }
 
       @Override
       public void execute() {
+        // double distToNearestScore = m_swerveDriveSubsystem.getSwerveDrive().getPosePositionMeters().getDistance(m_swerveDriveSubsystem.getSwerveDrive().getPose().nearest(null).getTranslation());
+        // if (distToNearestScore < 0.2) {
+        //   topSlice.setColor(0, 255, 0);
+        // }
         leftSlice.setRainbow(timer);
-        topSlice.setRainbow(timer);
         rightSlice.setRainbow(timer);
         m_ledSubsystem.display();
       };
     };
     ledDefaultCommand.addRequirements(m_ledSubsystem);
     m_ledSubsystem.setDefaultCommand(ledDefaultCommand);
-  }
-
-  public void resetIntake() {
-
   }
 
   /**

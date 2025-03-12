@@ -57,12 +57,30 @@ public class AddressableLEDSubsystem extends SubsystemBase {
         parent.set(i, color);
       }
     }
+
+    public void fillWithOffset(Color color, int startOffset, int endOffset) {
+      this.setFunc((double value) -> {
+        return color;
+      },
+      startOffset, endOffset);
+    }
     
-    public void setFunc(DoubleFunction<Color> func) {
-      for (int i = offset; i < length+offset; i++) {
+    public void setFunc(DoubleFunction<Color> func, int startOffset, int endOffset) {
+      if (startOffset>length || endOffset > length) { return; }
+      for (int i = offset+startOffset; i < length+offset-endOffset; i++) {
         double value = (((double)(i-offset))/(double)length);
-        parent.set(i, func.apply(value));
+        if (func.apply(value)!=null) {
+          parent.set(i, func.apply(value));
+        }
       }
+    }
+
+    public void setFunc(DoubleFunction<Color> func, int startOffset) {
+      setFunc(func, startOffset, 0);
+    }
+
+    public void setFunc(DoubleFunction<Color> func) {
+      setFunc(func, 0, 0);
     }
 
     public void setHueSine(Timer timer, int hue) {

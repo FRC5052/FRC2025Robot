@@ -9,37 +9,37 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.ClawConstants;
+import frc.robot.Constants.AlgaeIntakeConstants;
 
-public class ClawSubsystem extends SubsystemBase {
+public class AlgaeIntakeSubsystem extends SubsystemBase {
     private SparkMax pivotMotor;
     private SparkMax intakeMotor;
     private ProfiledPIDController pid;
-    private ClawPosition clawPosition;
+    private AlgaeIntakePosition algaeIntakePosition;
     private DigitalInput intakeLimit;
 
 
-    public ClawSubsystem() {
-        super();
-        this.pivotMotor = new SparkMax(ClawConstants.kPivotMotorID, MotorType.kBrushless);
-        this.intakeMotor = new SparkMax(ClawConstants.kIntakeMotorID, MotorType.kBrushless);
+    public AlgaeIntakeSubsystem() {
+        this.pivotMotor = new SparkMax(AlgaeIntakeConstants.kPivotMotorID, MotorType.kBrushless);
+        this.intakeMotor = new SparkMax(AlgaeIntakeConstants.kIntakeMotorID, MotorType.kBrushless);
 
-        this.intakeLimit = new DigitalInput(ClawConstants.kLimitSwitchPort);
+        this.intakeLimit = new DigitalInput(AlgaeIntakeConstants.kLimitSwitchPort);
 
-        this.pid = new ProfiledPIDController(ClawConstants.kP, ClawConstants.kI, ClawConstants.kD, new TrapezoidProfile.Constraints(ClawConstants.kMaxVelocity, ClawConstants.kMaxAcceleration));
-        this.clawPosition = ClawPosition.Idle;
+        this.pid = new ProfiledPIDController(AlgaeIntakeConstants.kP, AlgaeIntakeConstants.kI, AlgaeIntakeConstants.kD, new TrapezoidProfile.Constraints(AlgaeIntakeConstants.kMaxVelocity, AlgaeIntakeConstants.kMaxAcceleration));
+        
+        this.algaeIntakePosition = AlgaeIntakePosition.Score;
 
         SmartDashboard.putData("elevator", this);
         SmartDashboard.putData("elevator/feedback", this.pid);
     }
 
-    public enum ClawPosition {
+    public enum AlgaeIntakePosition {
         Idle(0.0),
         Score(1.0);
 
         private double level;
 
-        private ClawPosition(double level) {
+        private AlgaeIntakePosition(double level) {
             this.level = level;
         }
 
@@ -47,7 +47,7 @@ public class ClawSubsystem extends SubsystemBase {
             return this.level;
         }
 
-        public ClawPosition toggle() {
+        public AlgaeIntakePosition toggle() {
             switch (this) {
                 case Idle:
                     return Score;
@@ -58,7 +58,7 @@ public class ClawSubsystem extends SubsystemBase {
             }
         }
 
-        public ClawPosition next() {
+        public AlgaeIntakePosition next() {
             switch (this) {
                 case Idle:
                     return Score;
@@ -69,7 +69,7 @@ public class ClawSubsystem extends SubsystemBase {
             }
         }
 
-        public ClawPosition prev() {
+        public AlgaeIntakePosition prev() {
             switch (this) {
                 case Idle:
                     return Idle;
@@ -81,30 +81,24 @@ public class ClawSubsystem extends SubsystemBase {
         }
     }
 
-    public void setPositionSetpoint(ClawPosition position) {
-        this.clawPosition = position;
+    public void setPositionSetpoint(AlgaeIntakePosition position) {
+        this.algaeIntakePosition = position;
         pid.setGoal(position.position());
     }
 
-    private void setIntakeVelocity(double velocity) {
+    public void setIntakeVelocity(double velocity) {
         this.intakeMotor.set(velocity);
     }
 
-    public double getIntakeVelocity() {
-        return this.intakeMotor.get();
-    }
-
-    public void scoreCoral() {
-        // TODO Remove the short circuit (|| true)
-        if(!intakeLimit.get() || true) {
-            setIntakeVelocity(ClawConstants.kIntakeVelocity);
+    public void scoreAlgae() {
+        if(!intakeLimit.get()) {
+            setIntakeVelocity(-AlgaeIntakeConstants.kIntakeVelocity);
         }
     }
 
-    public void intakeCoral() {
-        // TODO Remove the short circuit (|| true)
-        if(intakeLimit.get() || true) {
-            setIntakeVelocity(-ClawConstants.kIntakeVelocity);
+    public void intakeAlgae() {
+        if(intakeLimit.get()) {
+            setIntakeVelocity(AlgaeIntakeConstants.kIntakeVelocity);
         }
     }
 
@@ -116,8 +110,8 @@ public class ClawSubsystem extends SubsystemBase {
         return pid.getGoal().position;
     }
 
-    public ClawPosition getClawPosition() {
-        return clawPosition;
+    public AlgaeIntakePosition getAlgaeIntakePosition() {
+        return algaeIntakePosition;
     }
 
     public double getVelocitySetpoint() {
@@ -134,8 +128,7 @@ public class ClawSubsystem extends SubsystemBase {
 
     public void setMotor() {
         double output = pid.calculate(getMeasuredPosition());
-        // System.out.println(output);
-        // pivotMotor.set(-output);
+        pivotMotor.setVoltage(MathUtil.clamp(output, 0.0, pivotMotor.getBusVoltage()));
     }
 
     @Override
@@ -143,9 +136,8 @@ public class ClawSubsystem extends SubsystemBase {
         // System.out.println(getMeasuredPosition());
         setMotor();
         // If limit switch activated, make sure velocity can only be set to negative (ejecting coral)
-        // TODO Remove the short circuit (|| true)
-        // if(!intakeLimit.get() || true) {
-        //     setIntakeVelocity(Math.min(intakeMotor.getEncoder().getVelocity(), 0));
-        // }
+        if(!intakeLimit.get()) {
+            setIntakeVelocity(Math.min(intakeMotor.getEncoder().getVelocity(), 0));
+        }
     }
 }

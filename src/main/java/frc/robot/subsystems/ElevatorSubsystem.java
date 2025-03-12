@@ -20,6 +20,7 @@ import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.MAXMotionConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
@@ -74,9 +75,11 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
             // .velocityConversionFactor(1.0);
             .positionConversionFactor(1.0)
             .velocityConversionFactor(1.0);
+        config.idleMode(IdleMode.kBrake);
         elevatorMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
         SparkMaxConfig followConfig = new SparkMaxConfig();
+        followConfig.idleMode(IdleMode.kBrake);
         followConfig.follow(elevatorMotor);
 
         followerMotor.configure(followConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
@@ -215,7 +218,7 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
     @Override
     public void periodic() {
-        
+        // System.out.println(getMeasuredHeight());
         // System.out.println(feedforward.getKg() + " " + feedback.getP());
         if(!bottomLimit.get()){
             resetLevel();
