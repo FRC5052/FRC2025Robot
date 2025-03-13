@@ -610,7 +610,9 @@ public class SwerveDrive implements Sendable {
         
 
         for (int i = 0; i < this.modules.length; i++) {
-            this.modules[i].setTargetState(this.wheelStates[i]);
+            if (Math.abs(this.wheelStates[i].speedMetersPerSecond) > 0.001) {
+                this.modules[i].setTargetState(this.wheelStates[i]);
+            }
             this.modules[i].update();
             this.wheelPositions[i] = this.modules[i].getActualPosition();
             this.wheelDeltaPositions[i] = this.modules[i].getActualDeltaPosition();

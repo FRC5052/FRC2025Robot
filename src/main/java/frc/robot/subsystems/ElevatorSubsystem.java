@@ -84,7 +84,7 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
         followerMotor.configure(followConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
-        elevatorLevel = Optional.of(ElevatorLevel.Home);
+        elevatorLevel = Optional.of(ElevatorLevel.L2);
 
         elevatorMotor.getEncoder().setPosition(0);
         SmartDashboard.putData("elevator", this);
@@ -92,12 +92,9 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
     }
 
     public enum ElevatorLevel {
-        Home(0.0),
-        L0(10.0),
-        L1(20.0),
-        L2(30.0),
-        Intake(40.0),
-        L3(45.0),
+        L2(0.0),
+        L3(19.0),
+        Coral(38.0),
         L4(ElevatorConstants.top);
 
         private double level;
@@ -112,17 +109,11 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
         public ElevatorLevel next() {
             switch (this) {
-                case Home:
-                    return L0;
-                case L0:
-                    return L1;
-                case L1:
-                    return L2;
                 case L2:
-                    return Intake;
-                case Intake:
                     return L3;
                 case L3:
+                    return Coral;
+                case Coral:
                     return L4;
                 case L4:
                     return L4;
@@ -133,20 +124,14 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
         public ElevatorLevel prev() {
             switch (this) {
-                case Home:
-                    return Home;
-                case L0:
-                    return Home;
-                case L1:
-                    return L0;
                 case L2:
-                    return L1;
-                case Intake:
                     return L2;
                 case L3:
-                    return Intake;
-                case L4:
+                    return L2;
+                case Coral:
                     return L3;
+                case L4:
+                    return Coral;
                 default:
                     return null;
             }
@@ -167,7 +152,7 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
         elevatorMotor.getEncoder().setPosition(0);
         feedback.setGoal(0.0);
         elevatorLevel = elevatorLevel.map((ElevatorLevel level) -> {
-            return ElevatorLevel.Home;
+            return ElevatorLevel.L2;
         });
     }
 
@@ -194,7 +179,7 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
     private void setMotor() {
         double output = feedback.calculate(getMeasuredHeight());
         output += feedforward.calculate(feedback.getSetpoint().velocity);
-        elevatorMotor.setVoltage(MathUtil.clamp(output, 0.0, elevatorMotor.getBusVoltage()));
+        elevatorMotor.setVoltage(MathUtil.clamp(output, -elevatorMotor.getBusVoltage(), elevatorMotor.getBusVoltage()));
     }
 
     // For use only for tuning feedforward, remove later

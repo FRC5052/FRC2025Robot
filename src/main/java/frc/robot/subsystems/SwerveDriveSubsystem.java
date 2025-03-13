@@ -93,7 +93,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
           .withPivotMotor(motor_cfg.clone().withID(2))
           .withAbsoluteEncoder(encoder_cfg.clone().withID(3).withOffset(29.00-180, Degrees))
       })
-      .withHeadingPID(new PIDConstants(2.0, 0.0, 0.2))
+      .withHeadingPID(new PIDConstants(4.0, 0.0, 0.2))
       .withModuleDrivePID(new PIDConstants(0.5, 0.0, 0.0))
       .withModulePivotPID(new PIDConstants(1.0, 0.0, 0.0))
       .withFieldCentric(true)
@@ -131,7 +131,11 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         }, 
         new PPHolonomicDriveController(
           new PIDConstants(0.5, 0.0, 0.0),
-          new PIDConstants(2.0, 0.0, 0.2)
+          new PIDConstants(
+            swerveDrive.getHeadingController().getP(), 
+            swerveDrive.getHeadingController().getI(),
+            swerveDrive.getHeadingController().getD()
+          )
         ), 
         RobotConfig.fromGUISettings(), 
         () -> {
@@ -164,7 +168,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       this.swerveDrive.setMaxDriveSpeed(4.0, MetersPerSecond); // Full drive speed
       this.swerveDrive.setMaxTurnSpeed(0.75, RotationsPerSecond); // Full turn speed
       this.swerveDrive.setMaxDriveAccel(8.0, MetersPerSecondPerSecond);
-      this.swerveDrive.setMaxTurnAccel(1.5, RotationsPerSecond.per(Second));
+      this.swerveDrive.setMaxTurnAccel(4.0, RotationsPerSecond.per(Second));
     } else {
       this.swerveDrive.setMaxDriveSpeed(2.0, MetersPerSecond); // Non-full drive speed
       this.swerveDrive.setMaxTurnSpeed(0.5, RotationsPerSecond); // Non-full turn speed
@@ -198,8 +202,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
         this.pathfindingCommand = null;
       }
     } else if (DriverStation.isTeleopEnabled()) {
-      double x = Math.pow(MathUtil.applyDeadband(this.xAxis.getAsDouble(), 0.1), 3);
-      double y = Math.pow(MathUtil.applyDeadband(this.yAxis.getAsDouble(), 0.1), 3);
+      double x = Math.pow(MathUtil.applyDeadband(this.xAxis.getAsDouble(), 0.25), 3);
+      double y = Math.pow(MathUtil.applyDeadband(this.yAxis.getAsDouble(), 0.2), 3);
       // Normalize joystick vector.
       if (Math.abs(x*x + y*y) > 1.0) {
         double angle = Math.atan2(y, x);

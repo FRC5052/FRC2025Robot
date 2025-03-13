@@ -15,7 +15,7 @@ public class ClimbSubsystem extends SubsystemBase {
         0.0, 
         0.0, 
         new Constraints(
-            256.0, 
+            128, 
             512.0
         )
     );

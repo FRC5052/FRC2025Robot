@@ -19,7 +19,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
-    public static final Transform2d kScoreOffset = new Transform2d(1,0, new Rotation2d(Math.PI));
+    public static final Transform2d kScoreOffset = new Transform2d(0.5,0.18, new Rotation2d(Math.PI));
   }
   public static class LEDConstants {
     public static final int kLEDPort = 0;
@@ -43,11 +43,11 @@ public final class Constants {
     public static final double kA = 0;
 
     public static final double kMaxVelocity = 1920.0;
-    public static final double kMaxAcceleration = 960.0;
+    public static final double kMaxAcceleration = 480.0;
 
     // Zero and max position of motor (rotations)
     public static final double bottom = 0;
-    public static final double top = 48; // 49.23
+    public static final double top = 49; // 49.23
 
     public static final int kLimitSwitchPort = 2;
 
@@ -63,16 +63,16 @@ public final class Constants {
     public static final int kIntakeMotorID = 17;
     public static final int kLimitSwitchPort = 1;
     // PID Constants
-    public static final double kP = 0.6;
+    public static final double kP = 0.4;
     public static final double kI = 0;
     public static final double kD = 0;
 
-    public static final double kMaxVelocity = 0.25;
-    public static final double kMaxAcceleration = 1;
-    public static final double kIntakeVelocity = 0.2;
+    public static final double kMaxVelocity = 15;
+    public static final double kMaxAcceleration = 15;
+    public static final double kIntakeVelocity = 0.15;
     // Claw Positions
     public static final double kIdlePosition = 0;
-    public static final double kScorePosition = 0.14286; // -0.14286
+    public static final double kScorePosition = -1.214; // -0.14286
   }
 
   public static class AlgaeIntakeConstants {

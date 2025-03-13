@@ -26,6 +26,7 @@ import frc.robot.subsystems.ElevatorSubsystem.ElevatorLevel;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.lang.invoke.MethodHandles.Lookup.ClassOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -69,12 +70,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -235,20 +238,20 @@ public class RobotContainer {
     m_secondaryController.leftTrigger().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().prev())));
 
     // Reset Level
-    m_secondaryController.b().onTrue(new InstantCommand(() -> m_elevatorSubsystem.resetLevel()));
+    m_secondaryController.y().onTrue(new InstantCommand(() -> m_elevatorSubsystem.resetLevel()));
+
+    m_secondaryController.b().onTrue(new ConditionalCommand(
+      new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Score)), 
+      new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle)), 
+      () -> m_clawSubsystem.getClawPosition() == ClawPosition.Idle
+    ));
 
     // Score Coral
-    m_secondaryController.a().onTrue(new InstantCommand(() -> {
-      if (m_clawSubsystem.getIntakeVelocity() < 0.0) {
-        System.out.println("Score");
-        intakeCoralCommand.cancel();
-        scoreCoralCommand.schedule();
-      } else {
-        System.out.println("Intake");
-        scoreCoralCommand.cancel();
-        intakeCoralCommand.schedule();
-      }
-    }));
+    m_secondaryController.a().onTrue(new ConditionalCommand(
+      scoreCoralCommand, 
+      intakeCoralCommand, 
+      () -> m_clawSubsystem.getClawPosition() == ClawPosition.Score
+    ));
 
     Command scoreAlgaeCommand = new Command() {
       @Override
@@ -280,17 +283,17 @@ public class RobotContainer {
     // Unclimb (Just in case) 
     m_secondaryController.povDown().onTrue(new InstantCommand(() -> m_climbSubsystem.setPositionSetpoint(ClimbPosition.Idle)));
 
-    // m_driverController.button(1).onFalse(new InstantCommand(() -> {
-    //   Optional<Pose2d> targetPose = Limelight.getScoringPose(
-    //     m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-    //     OperatorConstants.kScoreOffset,
-    //     Meter
-    //   );
-    //   targetPose.ifPresent((Pose2d pose) -> {
-    //     m_swerveDriveSubsystem.setTargetPose(pose);
-    //     topSlice.setColor(255, 255, 0);
-    //   });
-    // }));
+    m_driverController.button(1).onFalse(new InstantCommand(() -> {
+      Optional<Pose2d> targetPose = Limelight.getScoringPose(
+        m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
+        OperatorConstants.kScoreOffset,
+        Meter
+      );
+      targetPose.ifPresent((Pose2d pose) -> {
+        m_swerveDriveSubsystem.setTargetPose(pose);
+        topSlice.setColor(0, 255, 0);
+      });
+    }));
 
     // m_secondaryController.povUp().whileTrue(new Command() {
     //   @Override
@@ -360,9 +363,11 @@ public class RobotContainer {
       @Override
       public void execute() {
         // double distToNearestScore = m_swerveDriveSubsystem.getSwerveDrive().getPosePositionMeters().getDistance(m_swerveDriveSubsystem.getSwerveDrive().getPose().nearest(null).getTranslation());
-        // if (distToNearestScore < 0.2) {
-        //   topSlice.setColor(0, 255, 0);
-        // }
+        if (Limelight.hasReefScoreTag()) {
+          topSlice.setColor(0, 255, 0);
+        } else {
+          topSlice.setColor(0, 0, 0);
+        }
         leftSlice.setRainbow(timer);
         rightSlice.setRainbow(timer);
         m_ledSubsystem.display();

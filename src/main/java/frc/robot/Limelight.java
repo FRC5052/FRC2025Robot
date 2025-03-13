@@ -119,7 +119,7 @@ public class Limelight {
     //     return aprilTagPose;
     // }
 
-    private static boolean isValidScoreTag(OptionalInt id) {
+    public static boolean isValidScoreTag(OptionalInt id) {
         if (id.isPresent() && DriverStation.getAlliance().isPresent()) {
             int tagId = id.getAsInt();
             if (DriverStation.getAlliance().get().equals(Alliance.Blue)) {
@@ -127,6 +127,13 @@ public class Limelight {
             } else {
                 return redScoreTags.contains(tagId);
             }
+        }
+        return false;
+    }
+
+    public static boolean hasReefScoreTag() {
+        if (hasTarget()) {
+            return isValidScoreTag(getTargetID());
         }
         return false;
     }

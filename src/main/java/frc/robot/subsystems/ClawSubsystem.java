@@ -27,15 +27,17 @@ public class ClawSubsystem extends SubsystemBase {
         this.intakeLimit = new DigitalInput(ClawConstants.kLimitSwitchPort);
 
         this.pid = new ProfiledPIDController(ClawConstants.kP, ClawConstants.kI, ClawConstants.kD, new TrapezoidProfile.Constraints(ClawConstants.kMaxVelocity, ClawConstants.kMaxAcceleration));
+        this.pid.setTolerance(0.01);
         this.clawPosition = ClawPosition.Idle;
+        this.pivotMotor.getEncoder().setPosition(0);
 
         SmartDashboard.putData("elevator", this);
         SmartDashboard.putData("elevator/feedback", this.pid);
     }
 
     public enum ClawPosition {
-        Idle(0.0),
-        Score(1.0);
+        Idle(ClawConstants.kIdlePosition),
+        Score(ClawConstants.kScorePosition);
 
         private double level;
 
@@ -112,6 +114,10 @@ public class ClawSubsystem extends SubsystemBase {
         setIntakeVelocity(0);
     }
 
+    public boolean isAtSetPoint() {
+        return this.pid.atSetpoint();
+    }
+
     public double getPositionSetpoint() {
         return pid.getGoal().position;
     }
@@ -134,8 +140,9 @@ public class ClawSubsystem extends SubsystemBase {
 
     public void setMotor() {
         double output = pid.calculate(getMeasuredPosition());
-        // System.out.println(output);
-        // pivotMotor.set(-output);
+        // double output = pid.getSetpoint().position-getMeasuredPosition()*0.5;
+        // System.out.println("output: " + output + " | pos: " + getMeasuredPosition() + " | setpoint: " + getPositionSetpoint() + " | error: " + Math.abs(getMeasuredPosition()-getPositionSetpoint()));
+        pivotMotor.set(MathUtil.clamp(output, -0.5, 0.5));
     }
 
     @Override
