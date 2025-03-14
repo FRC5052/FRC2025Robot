@@ -1,7 +1,10 @@
 package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -21,21 +24,25 @@ public class AlgaeIntakeSubsystem extends SubsystemBase {
 
     public AlgaeIntakeSubsystem() {
         this.pivotMotor = new SparkMax(AlgaeIntakeConstants.kPivotMotorID, MotorType.kBrushless);
+        // config = new SparkMaxConfig();
+        // config.inverted(true);
+        // pivotMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
         this.intakeMotor = new SparkMax(AlgaeIntakeConstants.kIntakeMotorID, MotorType.kBrushless);
 
         this.intakeLimit = new DigitalInput(AlgaeIntakeConstants.kLimitSwitchPort);
 
         this.pid = new ProfiledPIDController(AlgaeIntakeConstants.kP, AlgaeIntakeConstants.kI, AlgaeIntakeConstants.kD, new TrapezoidProfile.Constraints(AlgaeIntakeConstants.kMaxVelocity, AlgaeIntakeConstants.kMaxAcceleration));
-        
+        this.pid.setTolerance(0.01);
         this.algaeIntakePosition = AlgaeIntakePosition.Score;
+        this.pivotMotor.getEncoder().setPosition(0);
 
         SmartDashboard.putData("elevator", this);
         SmartDashboard.putData("elevator/feedback", this.pid);
     }
 
     public enum AlgaeIntakePosition {
-        Idle(0.0),
-        Score(1.0);
+        Idle(AlgaeIntakeConstants.kIdlePosition),
+        Score(AlgaeIntakeConstants.kIntakeVelocity);
 
         private double level;
 
@@ -128,7 +135,7 @@ public class AlgaeIntakeSubsystem extends SubsystemBase {
 
     public void setMotor() {
         double output = pid.calculate(getMeasuredPosition());
-        pivotMotor.setVoltage(MathUtil.clamp(output, 0.0, pivotMotor.getBusVoltage()));
+        pivotMotor.set(MathUtil.clamp(output, -0.5, 0.5));
     }
 
     @Override

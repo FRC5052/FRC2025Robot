@@ -1,7 +1,11 @@
 package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -21,8 +25,14 @@ public class ClawSubsystem extends SubsystemBase {
 
     public ClawSubsystem() {
         super();
+        SparkMaxConfig config = new SparkMaxConfig();
+        config.idleMode(IdleMode.kBrake);
+
         this.pivotMotor = new SparkMax(ClawConstants.kPivotMotorID, MotorType.kBrushless);
+        pivotMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
         this.intakeMotor = new SparkMax(ClawConstants.kIntakeMotorID, MotorType.kBrushless);
+        intakeMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+
 
         this.intakeLimit = new DigitalInput(ClawConstants.kLimitSwitchPort);
 
@@ -142,7 +152,7 @@ public class ClawSubsystem extends SubsystemBase {
         double output = pid.calculate(getMeasuredPosition());
         // double output = pid.getSetpoint().position-getMeasuredPosition()*0.5;
         // System.out.println("output: " + output + " | pos: " + getMeasuredPosition() + " | setpoint: " + getPositionSetpoint() + " | error: " + Math.abs(getMeasuredPosition()-getPositionSetpoint()));
-        pivotMotor.set(MathUtil.clamp(output, -0.5, 0.5));
+        pivotMotor.set(output);
     }
 
     @Override

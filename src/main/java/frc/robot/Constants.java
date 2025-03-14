@@ -47,7 +47,7 @@ public final class Constants {
 
     // Zero and max position of motor (rotations)
     public static final double bottom = 0;
-    public static final double top = 49; // 49.23
+    public static final double top = 48.5; // 49.23
 
     public static final int kLimitSwitchPort = 2;
 
@@ -72,7 +72,7 @@ public final class Constants {
     public static final double kIntakeVelocity = 0.15;
     // Claw Positions
     public static final double kIdlePosition = 0;
-    public static final double kScorePosition = -1.214; // -0.14286
+    public static final double kScorePosition = -1.2; // -1.214
   }
 
   public static class AlgaeIntakeConstants {
@@ -81,15 +81,15 @@ public final class Constants {
     public static final int kIntakeMotorID = 19;
     public static final int kLimitSwitchPort = 0;
     // PID Constants
-    public static final double kP = 1;
+    public static final double kP = 0.6;
     public static final double kI = 0;
     public static final double kD = 0;
 
-    public static final double kMaxVelocity = 0;
-    public static final double kMaxAcceleration = 0;
+    public static final double kMaxVelocity = 5;
+    public static final double kMaxAcceleration = 5;
     public static final double kIntakeVelocity = 0;
     // Claw Positions
-    public static final double kIdlePosition = -0.429;
-    public static final double kScorePosition = 0;
+    public static final double kIdlePosition = 0;
+    public static final double kScorePosition = -0.429;
   }
 }

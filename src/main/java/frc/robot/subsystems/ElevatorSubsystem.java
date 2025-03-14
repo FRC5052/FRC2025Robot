@@ -93,7 +93,7 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
     public enum ElevatorLevel {
         L2(0.0),
-        L3(19.0),
+        L3(19.5),
         Coral(38.0),
         L4(ElevatorConstants.top);
 

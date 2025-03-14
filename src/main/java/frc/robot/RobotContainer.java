@@ -76,6 +76,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandGenericHID;
@@ -147,6 +148,7 @@ public class RobotContainer {
     this.m_clawSubsystem.register();
 
     this.m_algaeIntakeSubsystem = new AlgaeIntakeSubsystem();
+    this.m_algaeIntakeSubsystem.register();
 
     this.m_climbSubsystem = new ClimbSubsystem();
     this.m_climbSubsystem.register();
@@ -224,7 +226,12 @@ public class RobotContainer {
     );
     scoreCoralCommand.addRequirements(m_clawSubsystem);
 
-    Command intakeCoralCommand = new InstantCommand(() -> m_clawSubsystem.intakeCoral(), m_clawSubsystem);
+    Command intakeCoralCommand = new SequentialCommandGroup(
+      new InstantCommand(() -> m_clawSubsystem.intakeCoral()),
+      new WaitCommand(1.0),
+      new InstantCommand(() -> m_clawSubsystem.resetIntake())
+    );
+    intakeCoralCommand.addRequirements(m_clawSubsystem);
 
     
 
@@ -240,48 +247,32 @@ public class RobotContainer {
     // Reset Level
     m_secondaryController.y().onTrue(new InstantCommand(() -> m_elevatorSubsystem.resetLevel()));
 
-    m_secondaryController.b().onTrue(new ConditionalCommand(
+    m_secondaryController.a().onTrue(new ConditionalCommand(
       new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Score)), 
       new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle)), 
       () -> m_clawSubsystem.getClawPosition() == ClawPosition.Idle
     ));
 
     // Score Coral
-    m_secondaryController.a().onTrue(new ConditionalCommand(
-      scoreCoralCommand, 
-      intakeCoralCommand, 
-      () -> m_clawSubsystem.getClawPosition() == ClawPosition.Score
+    m_secondaryController.x().whileTrue(new StartEndCommand(
+      () -> m_clawSubsystem.scoreCoral(), 
+      () -> m_clawSubsystem.resetIntake(), 
+      m_clawSubsystem
     ));
 
-    Command scoreAlgaeCommand = new Command() {
-      @Override
-      public void initialize() {
-        m_algaeIntakeSubsystem.getAlgaeIntakePosition().toggle();
-      }
+    // Intake Coral
+    m_secondaryController.b().whileTrue(new StartEndCommand(
+      () -> m_clawSubsystem.intakeCoral(), 
+      () -> m_clawSubsystem.resetIntake(), 
+      m_clawSubsystem
+    ));
 
-      @Override
-      public void execute() {
-          if (Math.abs(m_algaeIntakeSubsystem.getMeasuredPosition()-AlgaeIntakePosition.Score.position()) < 0.1) {
-              m_algaeIntakeSubsystem.scoreAlgae();
-          }
-      }
 
-      @Override
-      public void end(boolean interrupted) {
-          m_algaeIntakeSubsystem.resetIntake();
-          // if (Math.abs(m_elevatorSubsystem.getMeasuredHeight()-ElevatorLevel.L4.height()) < 0.1) {
-          //   m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle);
-          // }
-      }
-    };
-    // Score Algae
-    m_secondaryController.x().onTrue(scoreAlgaeCommand);
+    // Algae Arm Out
+    m_secondaryController.povUp().onTrue(new InstantCommand(() -> m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Score)));
 
-    // Climb
-    m_secondaryController.povUp().onTrue(new InstantCommand(() -> m_climbSubsystem.setPositionSetpoint(ClimbPosition.Score)));
-
-    // Unclimb (Just in case) 
-    m_secondaryController.povDown().onTrue(new InstantCommand(() -> m_climbSubsystem.setPositionSetpoint(ClimbPosition.Idle)));
+    // Algae Arm In
+    m_secondaryController.povDown().onTrue(new InstantCommand(() -> m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Idle)));
 
     m_driverController.button(1).onFalse(new InstantCommand(() -> {
       Optional<Pose2d> targetPose = Limelight.getScoringPose(
@@ -352,12 +343,16 @@ public class RobotContainer {
 
     // LED Subsystem
 
-    Command ledDefaultCommand = new Command() {
+    Command ledIdleCommand = new Command() {
       Timer timer = new Timer();
+      double height;
+      double setHeight;
 
       @Override
       public void initialize() {
           timer.start();
+          height = m_elevatorSubsystem.getMeasuredHeight();
+          setHeight = m_elevatorSubsystem.getHeightSetpoint();
       }
 
       @Override
@@ -368,13 +363,37 @@ public class RobotContainer {
         } else {
           topSlice.setColor(0, 0, 0);
         }
-        leftSlice.setRainbow(timer);
-        rightSlice.setRainbow(timer);
+        if (m_elevatorSubsystem.getHeightSetpoint() < 0.5) {
+          leftSlice.setRainbow(timer);
+          rightSlice.setRainbow(timer);
+        } else {
+          height = m_elevatorSubsystem.getMeasuredHeight();
+          setHeight = m_elevatorSubsystem.getHeightSetpoint();
+          leftSlice.fill(Color.kBlack);
+          rightSlice.fill(Color.kBlack);
+          if (height <= setHeight) {
+            leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kOrange, null);
+            leftSlice.setMeter(ElevatorConstants.top, height, Color.kRed, null);
+            rightSlice.setMeter(1-ElevatorConstants.top/setHeight, null, Color.kOrange);
+            rightSlice.setMeter(1-ElevatorConstants.top/setHeight, null, Color.kRed);
+          } else {
+            leftSlice.setMeter(ElevatorConstants.top, height, Color.kOrange, null);
+            leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kRed, null);
+            rightSlice.setMeter(1-ElevatorConstants.top/setHeight, null, Color.kOrange);
+            rightSlice.setMeter(1-ElevatorConstants.top/setHeight, null, Color.kRed);
+          }
+        }
         m_ledSubsystem.display();
       };
     };
-    ledDefaultCommand.addRequirements(m_ledSubsystem);
-    m_ledSubsystem.setDefaultCommand(ledDefaultCommand);
+    ledIdleCommand.addRequirements(m_ledSubsystem);
+
+    // ConditionalCommand ledDefaultCommand = new ConditionalCommand(
+    //   ledIdleCommand, 
+    //   ledElevatorHeightCommand, 
+    //   () -> m_elevatorSubsystem.getLevelSetpoint().isPresent() ? m_elevatorSubsystem.getLevelSetpoint().get().height()>10 : true
+    // );
+    m_ledSubsystem.setDefaultCommand(ledIdleCommand);
   }
 
   /**

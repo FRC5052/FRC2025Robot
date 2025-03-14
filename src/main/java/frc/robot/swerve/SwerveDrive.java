@@ -190,7 +190,7 @@ public class SwerveDrive implements Sendable {
      * @param fieldCentric If this swerve drive should be field centric.
      */
     public void setIsFieldCentric(boolean fieldCentric) {
-        this.fieldCentric = fieldCentric;
+        this.fieldCentric = true; // fieldCentric;
     }
 
     /**
