@@ -19,7 +19,9 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
-    public static final Transform2d kScoreOffset = new Transform2d(0.5,0.18, new Rotation2d(Math.PI));
+    public static final Transform2d kScoreRightOffset = new Transform2d(0.5,0.18, new Rotation2d(Math.PI));
+    public static final Transform2d kScoreLeftOffset = new Transform2d(0.5,-0.18, new Rotation2d(Math.PI));
+    public static final Transform2d kScoreCenterOffset = new Transform2d(0.5,0.0, new Rotation2d(Math.PI));
   }
   public static class LEDConstants {
     public static final int kLEDPort = 0;
@@ -77,19 +79,19 @@ public final class Constants {
 
   public static class AlgaeIntakeConstants {
     // Motor CAN IDs
-    public static final int kPivotMotorID = 18; 
-    public static final int kIntakeMotorID = 19;
+    public static final int kPivotMotorID = 19; 
+    public static final int kIntakeMotorID = 18;
     public static final int kLimitSwitchPort = 0;
     // PID Constants
-    public static final double kP = 0.6;
+    public static final double kP = 0.2;
     public static final double kI = 0;
     public static final double kD = 0;
 
     public static final double kMaxVelocity = 5;
     public static final double kMaxAcceleration = 5;
-    public static final double kIntakeVelocity = 0;
+    public static final double kIntakeVelocity = 0.25;
     // Claw Positions
     public static final double kIdlePosition = 0;
-    public static final double kScorePosition = -0.429;
+    public static final double kScorePosition = 15; // -0.429;
   }
 }

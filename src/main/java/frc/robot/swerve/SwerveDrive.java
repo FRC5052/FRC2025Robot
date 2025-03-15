@@ -639,7 +639,7 @@ public class SwerveDrive implements Sendable {
         this.tagTarget.setPose(
             Limelight.getScoringPose(
                 getPose(), 
-                OperatorConstants.kScoreOffset,
+                OperatorConstants.kScoreLeftOffset,
                 Meter
             ).orElse(getPose())
         );

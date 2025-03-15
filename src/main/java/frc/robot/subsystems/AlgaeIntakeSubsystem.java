@@ -42,7 +42,7 @@ public class AlgaeIntakeSubsystem extends SubsystemBase {
 
     public enum AlgaeIntakePosition {
         Idle(AlgaeIntakeConstants.kIdlePosition),
-        Score(AlgaeIntakeConstants.kIntakeVelocity);
+        Score(AlgaeIntakeConstants.kScorePosition);
 
         private double level;
 
@@ -98,13 +98,13 @@ public class AlgaeIntakeSubsystem extends SubsystemBase {
     }
 
     public void scoreAlgae() {
-        if(!intakeLimit.get()) {
+        if(!intakeLimit.get() || true) {
             setIntakeVelocity(-AlgaeIntakeConstants.kIntakeVelocity);
         }
     }
 
     public void intakeAlgae() {
-        if(intakeLimit.get()) {
+        if(intakeLimit.get() || true) {
             setIntakeVelocity(AlgaeIntakeConstants.kIntakeVelocity);
         }
     }
@@ -140,11 +140,11 @@ public class AlgaeIntakeSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // System.out.println(getMeasuredPosition());
+        System.out.println("pos: " + getMeasuredPosition() + " | setpoint: " + getPositionSetpoint() + " | error: " + Math.abs(getMeasuredPosition()-getPositionSetpoint()));
         setMotor();
         // If limit switch activated, make sure velocity can only be set to negative (ejecting coral)
-        if(!intakeLimit.get()) {
-            setIntakeVelocity(Math.min(intakeMotor.getEncoder().getVelocity(), 0));
-        }
+        // if(!intakeLimit.get()) {
+        //     setIntakeVelocity(Math.min(intakeMotor.getEncoder().getVelocity(), 0));
+        // }
     }
 }

@@ -153,6 +153,14 @@ public class RobotContainer {
     this.m_climbSubsystem = new ClimbSubsystem();
     this.m_climbSubsystem.register();
 
+    NamedCommands.registerCommand("L2/Trough", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L2)));
+    NamedCommands.registerCommand("L3", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L3)));
+    NamedCommands.registerCommand("Coral", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.Coral)));
+    NamedCommands.registerCommand("L4", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L4)));
+    
+    NamedCommands.registerCommand("Score", new InstantCommand(() -> m_clawSubsystem.scoreCoral()));
+    NamedCommands.registerCommand("ResetIntake", new InstantCommand(() -> m_clawSubsystem.resetIntake()));
+
     this.autoChooser = AutoBuilder.buildAutoChooser();
     
 
@@ -267,24 +275,64 @@ public class RobotContainer {
       m_clawSubsystem
     ));
 
+    Command scoreAlgaeCommand = new StartEndCommand(
+      () -> m_algaeIntakeSubsystem.scoreAlgae(),
+      () -> m_algaeIntakeSubsystem.resetIntake()  
+    );
+
+    Command intakeAlgaeCommand = new StartEndCommand(
+      () -> m_algaeIntakeSubsystem.intakeAlgae(),
+      () -> m_algaeIntakeSubsystem.resetIntake()  
+    );
+    
+    Command algaeArmOutCommand = new InstantCommand(() -> m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Score));
+    
+    Command algaeArmInCommand = new InstantCommand(() -> m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Idle));
 
     // Algae Arm Out
-    m_secondaryController.povUp().onTrue(new InstantCommand(() -> m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Score)));
+    m_secondaryController.povUp().onTrue(algaeArmOutCommand);
 
     // Algae Arm In
-    m_secondaryController.povDown().onTrue(new InstantCommand(() -> m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Idle)));
+    m_secondaryController.povDown().onTrue(algaeArmInCommand);
 
-    m_driverController.button(1).onFalse(new InstantCommand(() -> {
-      Optional<Pose2d> targetPose = Limelight.getScoringPose(
-        m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-        OperatorConstants.kScoreOffset,
-        Meter
-      );
-      targetPose.ifPresent((Pose2d pose) -> {
-        m_swerveDriveSubsystem.setTargetPose(pose);
-        topSlice.setColor(0, 255, 0);
-      });
-    }));
+    m_secondaryController.povRight().whileTrue(intakeAlgaeCommand);
+    m_secondaryController.povLeft().whileTrue(scoreAlgaeCommand);
+
+    m_driverController.button(1).onFalse(
+      new InstantCommand(() -> {
+        if (m_driverController.button(6).getAsBoolean()) {
+          Optional<Pose2d> targetPose = Limelight.getScoringPose(
+            m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
+            OperatorConstants.kScoreLeftOffset,
+            Meter
+          );
+          targetPose.ifPresent((Pose2d pose) -> {
+            m_swerveDriveSubsystem.setTargetPose(pose);
+            topSlice.setColor(0, 255, 0);
+          });
+        } else if (m_driverController.button(5).getAsBoolean()) {
+          Optional<Pose2d> targetPose = Limelight.getScoringPose(
+            m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
+            OperatorConstants.kScoreLeftOffset,
+            Meter
+          );
+          targetPose.ifPresent((Pose2d pose) -> {
+            m_swerveDriveSubsystem.setTargetPose(pose);
+            topSlice.setColor(0, 255, 0);
+          });
+        } else {
+          Optional<Pose2d> targetPose = Limelight.getScoringPose(
+            m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
+            OperatorConstants.kScoreCenterOffset,
+            Meter
+          );
+          targetPose.ifPresent((Pose2d pose) -> {
+            m_swerveDriveSubsystem.setTargetPose(pose);
+            topSlice.setColor(0, 255, 0);
+          });
+        }
+      }
+    ));
 
     // m_secondaryController.povUp().whileTrue(new Command() {
     //   @Override
