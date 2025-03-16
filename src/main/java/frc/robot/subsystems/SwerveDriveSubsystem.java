@@ -91,7 +91,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
           .withOffset(new Translation2d(-10, 10), Inches)
           .withDriveMotor(motor_cfg.clone().withID(1))
           .withPivotMotor(motor_cfg.clone().withID(2))
-          .withAbsoluteEncoder(encoder_cfg.clone().withID(3).withOffset(29.00-180, Degrees))
+          .withAbsoluteEncoder(encoder_cfg.clone().withID(3).withOffset(27.7-180, Degrees))
       })
       .withHeadingPID(new PIDConstants(4.0, 0.0, 0.2))
       .withModuleDrivePID(new PIDConstants(0.5, 0.0, 0.0))
@@ -220,7 +220,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
     if (DriverStation.isEnabled()) {
       Limelight.setRobotYaw(this.swerveDrive.getPoseAngle(Radians), this.swerveDrive.getActualSpeeds().omegaRadiansPerSecond, Radians, RadiansPerSecond);
-      var aprilTagPose = Limelight.getFieldCentricRobotPose(Meters, true);
+      var aprilTagPose = Limelight.getFieldCentricRobotPose(Meters, false);
       if (aprilTagPose.isPresent() && this.seeingAprilTag) {
         this.swerveDrive.setPose(new Pose2d(this.poseResetXFilter.calculate(aprilTagPose.get().getX()), this.poseResetYFilter.calculate(aprilTagPose.get().getY()), new Rotation2d(this.swerveDrive.getActualHeading(Radians))));
       }

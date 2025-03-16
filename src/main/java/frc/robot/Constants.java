@@ -71,9 +71,10 @@ public final class Constants {
 
     public static final double kMaxVelocity = 15;
     public static final double kMaxAcceleration = 15;
-    public static final double kIntakeVelocity = 0.15;
+    public static final double kIntakeVelocity = 0.2;
     // Claw Positions
     public static final double kIdlePosition = 0;
+    public static final double kIntakePosition = -0.75;
     public static final double kScorePosition = -1.2; // -1.214
   }
 

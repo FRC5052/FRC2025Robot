@@ -505,6 +505,14 @@ public class SwerveDrive implements Sendable {
         this.imu.zeroHeading();
         this.targetHeading = this.targetHeading.map((x) -> new Rotation2d());
         this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), new Rotation2d()));
+        // if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Blue)) {
+        
+        // } else {
+        //     this.imu.zeroHeading();
+        //     this.imu.setHeadingOffset(180, Degree);
+        //     this.targetHeading = this.targetHeading.map((x) -> new Rotation2d(Math.PI));
+        //     this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), new Rotation2d(Math.PI)));
+        // }
     }
 
     /** 
@@ -610,9 +618,7 @@ public class SwerveDrive implements Sendable {
         
 
         for (int i = 0; i < this.modules.length; i++) {
-            if (Math.abs(this.wheelStates[i].speedMetersPerSecond) > 0.001) {
-                this.modules[i].setTargetState(this.wheelStates[i]);
-            }
+            this.modules[i].setTargetState(this.wheelStates[i]);
             this.modules[i].update();
             this.wheelPositions[i] = this.modules[i].getActualPosition();
             this.wheelDeltaPositions[i] = this.modules[i].getActualDeltaPosition();
@@ -689,7 +695,7 @@ public class SwerveDrive implements Sendable {
         private OptionalDouble maxTurnSpeed = OptionalDouble.empty();
         private OptionalDouble maxDriveAccel = OptionalDouble.empty();
         private OptionalDouble maxTurnAccel = OptionalDouble.empty();
-        private boolean fieldCentric = false;
+        private boolean fieldCentric = true;
 
         public Builder withModules(SwerveModule.Builder... modules) {
             this.modules = Optional.of(modules);

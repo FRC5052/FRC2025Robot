@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.AlgaeIntakeConstants;
+import frc.robot.Constants.ClawConstants;
 
 public class AlgaeIntakeSubsystem extends SubsystemBase {
     private SparkMax pivotMotor;
@@ -138,10 +139,18 @@ public class AlgaeIntakeSubsystem extends SubsystemBase {
         pivotMotor.set(MathUtil.clamp(output, -0.5, 0.5));
     }
 
+    public void setPivotVelocity(double speed) {
+        if (!(speed < 0 && getMeasuredPosition() < 0) && !(speed > 0 && getMeasuredPosition() > AlgaeIntakeConstants.kScorePosition)) {
+            pivotMotor.set(speed);
+        } else {
+            pivotMotor.stopMotor();
+        }
+    }
+
     @Override
     public void periodic() {
-        System.out.println("pos: " + getMeasuredPosition() + " | setpoint: " + getPositionSetpoint() + " | error: " + Math.abs(getMeasuredPosition()-getPositionSetpoint()));
-        setMotor();
+        // System.out.println("pos: " + getMeasuredPosition() + " | setpoint: " + getPositionSetpoint() + " | error: " + Math.abs(getMeasuredPosition()-getPositionSetpoint()));
+        // setMotor();
         // If limit switch activated, make sure velocity can only be set to negative (ejecting coral)
         // if(!intakeLimit.get()) {
         //     setIntakeVelocity(Math.min(intakeMotor.getEncoder().getVelocity(), 0));
