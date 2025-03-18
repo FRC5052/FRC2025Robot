@@ -119,6 +119,7 @@ public class SwerveDrive implements Sendable {
     public SwerveDrive(Pose2d initialPose, SwerveIMU imu, SwerveModule... modules) {
         this.imu = imu;
         this.imu.calibrate();
+        this.imu.zeroHeading();
         this.modules = modules;
         this.pose = initialPose;
         Translation2d[] positions = new Translation2d[this.modules.length];
@@ -190,7 +191,7 @@ public class SwerveDrive implements Sendable {
      * @param fieldCentric If this swerve drive should be field centric.
      */
     public void setIsFieldCentric(boolean fieldCentric) {
-        this.fieldCentric = true; // fieldCentric;
+        this.fieldCentric = fieldCentric; // fieldCentric;
     }
 
     /**
@@ -502,17 +503,16 @@ public class SwerveDrive implements Sendable {
      * Resets the heading of this swerve drive such that the new reported heading is zero.
      */
     public void zeroHeading() {
-        this.imu.zeroHeading();
-        this.targetHeading = this.targetHeading.map((x) -> new Rotation2d());
-        this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), new Rotation2d()));
-        // if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Blue)) {
-        
-        // } else {
-        //     this.imu.zeroHeading();
-        //     this.imu.setHeadingOffset(180, Degree);
-        //     this.targetHeading = this.targetHeading.map((x) -> new Rotation2d(Math.PI));
-        //     this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), new Rotation2d(Math.PI)));
-        // }
+        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Blue)) {
+            this.imu.zeroHeading();
+            this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), new Rotation2d()));
+            this.targetHeading = this.targetHeading.map((x) -> new Rotation2d());
+        } else {
+            this.imu.zeroHeading();
+            this.imu.setHeadingOffset(180, Degree);
+            this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), new Rotation2d(Math.PI)));
+            this.targetHeading = this.targetHeading.map((x) -> new Rotation2d(Math.PI));
+        }
     }
 
     /** 
@@ -598,6 +598,12 @@ public class SwerveDrive implements Sendable {
      */
     public void update() {
         if (!this.isEnabled()) return;
+
+        // System.out.println(getPose());
+        System.out.println(fieldCentric);
+        // if (fieldCentric) {
+        //     System.out.println("yo");
+        // }
 
         this.speeds = new ChassisSpeeds(
             SwerveUtil.limitAccelAndSpeed(this.targetSpeeds.vxMetersPerSecond, this.speeds.vxMetersPerSecond, Robot.kDefaultPeriod, this.maxDriveSpeed, this.maxDriveAccel),

@@ -5,6 +5,7 @@ import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -25,9 +26,9 @@ public class AlgaeIntakeSubsystem extends SubsystemBase {
 
     public AlgaeIntakeSubsystem() {
         this.pivotMotor = new SparkMax(AlgaeIntakeConstants.kPivotMotorID, MotorType.kBrushless);
-        // config = new SparkMaxConfig();
-        // config.inverted(true);
-        // pivotMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        SparkMaxConfig config = new SparkMaxConfig();
+        config.idleMode(IdleMode.kBrake);
+        pivotMotor.configure(config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
         this.intakeMotor = new SparkMax(AlgaeIntakeConstants.kIntakeMotorID, MotorType.kBrushless);
 
         this.intakeLimit = new DigitalInput(AlgaeIntakeConstants.kLimitSwitchPort);
@@ -140,11 +141,12 @@ public class AlgaeIntakeSubsystem extends SubsystemBase {
     }
 
     public void setPivotVelocity(double speed) {
-        if (!(speed < 0 && getMeasuredPosition() < 0) && !(speed > 0 && getMeasuredPosition() > AlgaeIntakeConstants.kScorePosition)) {
-            pivotMotor.set(speed);
-        } else {
-            pivotMotor.stopMotor();
-        }
+        pivotMotor.set(speed);
+        // if (!(speed < 0 && getMeasuredPosition() < 0) && !(speed > 0 && getMeasuredPosition() > AlgaeIntakeConstants.kScorePosition)) {
+        //     pivotMotor.set(speed);
+        // } else {
+        //     pivotMotor.stopMotor();
+        // }
     }
 
     @Override

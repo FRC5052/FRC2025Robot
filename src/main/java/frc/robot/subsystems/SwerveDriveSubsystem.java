@@ -30,6 +30,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -56,6 +57,8 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     this.xAxis = xAxis;
     this.yAxis = yAxis;
     this.rAxis = rAxis;
+
+    DriverStation.Alliance currentAlliance = DriverStation.getAlliance().isPresent() ? DriverStation.getAlliance().get() : DriverStation.Alliance.Blue;
 
     SwerveModule.Builder module_cfg = SwerveModule.builder()
       .withDriveGearRatio(6.75)
@@ -97,6 +100,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       .withModuleDrivePID(new PIDConstants(0.5, 0.0, 0.0))
       .withModulePivotPID(new PIDConstants(1.0, 0.0, 0.0))
       .withFieldCentric(true)
+      .withInitialPose(currentAlliance.equals(DriverStation.Alliance.Blue) ? 
+        new Pose2d(0, 0, new Rotation2d(Math.PI)) : 
+        new Pose2d(0, 0, new Rotation2d())
+      )
       .build();
 
     this.setFullSpeed(true);
@@ -199,11 +206,19 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   public void periodic() {
     if (this.pathfindingCommand != null && this.pathfindingCommand.isScheduled()) {
       if (this.pathfindingCommand.isFinished()) {
+        this.pathfindingCommand.cancel();
+        this.setFullSpeed(true);
         this.pathfindingCommand = null;
+        this.swerveDrive.setIsFieldCentric(true);
       }
     } else if (DriverStation.isTeleopEnabled()) {
       double x = Math.pow(MathUtil.applyDeadband(this.xAxis.getAsDouble(), 0.25), 3);
       double y = Math.pow(MathUtil.applyDeadband(this.yAxis.getAsDouble(), 0.2), 3);
+      if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Red) && this.swerveDrive.isFieldCentric()) {
+        x = Math.pow(MathUtil.applyDeadband(-this.xAxis.getAsDouble(), 0.25), 3);
+        y = Math.pow(MathUtil.applyDeadband(-this.yAxis.getAsDouble(), 0.2), 3);
+      }
+      
       // Normalize joystick vector.
       if (Math.abs(x*x + y*y) > 1.0) {
         double angle = Math.atan2(y, x);
@@ -220,9 +235,13 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
     if (DriverStation.isEnabled()) {
       Limelight.setRobotYaw(this.swerveDrive.getPoseAngle(Radians), this.swerveDrive.getActualSpeeds().omegaRadiansPerSecond, Radians, RadiansPerSecond);
-      var aprilTagPose = Limelight.getFieldCentricRobotPose(Meters, false);
+      var aprilTagPose = Limelight.getFieldCentricRobotPose(Meters, true);
       if (aprilTagPose.isPresent() && this.seeingAprilTag) {
-        this.swerveDrive.setPose(new Pose2d(this.poseResetXFilter.calculate(aprilTagPose.get().getX()), this.poseResetYFilter.calculate(aprilTagPose.get().getY()), new Rotation2d(this.swerveDrive.getActualHeading(Radians))));
+        double rotation = this.swerveDrive.getActualHeading(Radians) + Math.PI;
+        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Red)) {
+          rotation -= Math.PI;
+        }
+        this.swerveDrive.setPose(new Pose2d(this.poseResetXFilter.calculate(aprilTagPose.get().getX()), this.poseResetYFilter.calculate(aprilTagPose.get().getY()), new Rotation2d(rotation)));
       }
       this.seeingAprilTag = aprilTagPose.isPresent();
     }

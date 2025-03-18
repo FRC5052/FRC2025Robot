@@ -192,35 +192,48 @@ public class RobotContainer {
     // cancelling on release.
 
     // Reset Heading
-    m_driverController.button(1).onFalse(new InstantCommand(() -> m_swerveDriveSubsystem.resetHeading()));
+    m_driverController.button(3).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.resetHeading()));
 
     // Auto-Align
-    // m_driverController.button(3).debounce(0.1).toggleOnTrue(
-    //   new InstantCommand(() -> {
-    //     Optional<Pose2d> targetPose = Limelight.getScoringPose(
-    //         m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-    //         OperatorConstants.kScoreLeftOffset,
-    //         Meter
-    //       );
-    //       targetPose.ifPresent((Pose2d pose) -> {
-    //         m_swerveDriveSubsystem.setTargetPose(pose);
-    //         topSlice.setColor(0, 255, 0);
-    //       });
-    //   })
-    // );
-    // m_driverController.button(4).debounce(0.1).toggleOnTrue(
-    //   new InstantCommand(() -> {
-    //     Optional<Pose2d> targetPose = Limelight.getScoringPose(
-    //         m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-    //         OperatorConstants.kScoreRightOffset,
-    //         Meter
-    //       );
-    //       targetPose.ifPresent((Pose2d pose) -> {
-    //         m_swerveDriveSubsystem.setTargetPose(pose);
-    //         topSlice.setColor(0, 255, 0);
-    //       });
-    //   })
-    // );
+    m_driverController.button(7).debounce(0.1).toggleOnTrue(
+      new InstantCommand(() -> {
+        Optional<Pose2d> targetPose = Limelight.getScoringPose(
+            m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
+            OperatorConstants.kScoreLeftOffset,
+            Meter
+          );
+          targetPose.ifPresent((Pose2d pose) -> {
+            m_swerveDriveSubsystem.setTargetPose(pose);
+            topSlice.setColor(0, 255, 0);
+          });
+      })
+    );
+    m_driverController.button(8).debounce(0.1).toggleOnTrue(
+      new InstantCommand(() -> {
+        Optional<Pose2d> targetPose = Limelight.getScoringPose(
+            m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
+            OperatorConstants.kScoreRightOffset,
+            Meter
+          );
+          targetPose.ifPresent((Pose2d pose) -> {
+            m_swerveDriveSubsystem.setTargetPose(pose);
+            topSlice.setColor(0, 255, 0);
+          });
+      })
+    );
+
+    // Toggle field centric
+    m_driverController.button(1).whileTrue(new Command() {
+      @Override
+      public void execute() {
+        m_swerveDriveSubsystem.setFieldCentric(false);
+      }
+      @Override
+      public void end(boolean interrupted) {
+        m_swerveDriveSubsystem.setFieldCentric(true);
+      }
+    });
+    
     // m_driverController.button(3).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.resetHeading()));
     // m_driverController.button(4).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.setTargetPose(new Pose2d(9.5, 2.0, new Rotation2d(Radians.convertFrom(90.0, Degrees))))));
 
@@ -388,32 +401,46 @@ public class RobotContainer {
 
     // Algae Arm Out
     m_secondaryController.povUp().whileTrue(new StartEndCommand(
-      () -> m_algaeIntakeSubsystem.setPivotVelocity(-0.05), 
+      () -> m_algaeIntakeSubsystem.setPivotVelocity(0.05), 
       () -> m_algaeIntakeSubsystem.setPivotVelocity(0)
     ));
 
     // Algae Arm In
     m_secondaryController.povDown().whileTrue(new StartEndCommand(
-      () -> m_algaeIntakeSubsystem.setPivotVelocity(0.05), 
+      () -> m_algaeIntakeSubsystem.setPivotVelocity(-0.05), 
       () -> m_algaeIntakeSubsystem.setPivotVelocity(0)
     ));
 
     m_secondaryController.povRight().whileTrue(scoreAlgaeCommand);
     m_secondaryController.povLeft().whileTrue(intakeAlgaeCommand);
 
-    // m_secondaryController.povDownLeft().whileTrue(
-    //   new ParallelCommandGroup(
-    //     algaeArmInCommand,
-    //     intakeAlgaeCommand
-    //   )
-    // );
+    m_secondaryController.povDownLeft().whileTrue(
+      new StartEndCommand(
+        () -> {
+          // m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Idle);
+          m_algaeIntakeSubsystem.setPivotVelocity(-0.05);
+          m_algaeIntakeSubsystem.intakeAlgae();
+        },
+        () -> {
+          m_algaeIntakeSubsystem.resetIntake();
+          m_algaeIntakeSubsystem.setPivotVelocity(0);
+        }
+      )
+    );
 
-    // m_secondaryController.povUpRight().whileTrue(
-    //   new ParallelCommandGroup(
-    //     algaeArmOutCommand,
-    //     scoreAlgaeCommand
-    //   )
-    // );
+    m_secondaryController.povUpRight().whileTrue(
+      new StartEndCommand(
+        () -> {
+          // m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Score);
+          m_algaeIntakeSubsystem.setPivotVelocity(0.05);
+          m_algaeIntakeSubsystem.scoreAlgae();
+        },
+        () -> {
+          m_algaeIntakeSubsystem.resetIntake();
+          m_algaeIntakeSubsystem.setPivotVelocity(0);
+        }
+      )
+    );
 
     // m_driverController.button(1).onFalse(
     //   new InstantCommand(() -> {

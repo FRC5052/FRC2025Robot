@@ -22,6 +22,7 @@ public final class Constants {
     public static final Transform2d kScoreRightOffset = new Transform2d(0.5,0.18, new Rotation2d(Math.PI));
     public static final Transform2d kScoreLeftOffset = new Transform2d(0.5,-0.18, new Rotation2d(Math.PI));
     public static final Transform2d kScoreCenterOffset = new Transform2d(0.5,0.0, new Rotation2d(Math.PI));
+    // TODO: Add constant for intial pose on blue side (red side will be accounted for with code)
   }
   public static class LEDConstants {
     public static final int kLEDPort = 0;
