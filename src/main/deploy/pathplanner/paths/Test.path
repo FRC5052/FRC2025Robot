@@ -4,44 +4,28 @@
     {
       "anchor": {
         "x": 7.6,
-        "y": 7.272
+        "y": 4.04298155737705
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.379715533183676,
-        "y": 7.153785137654151
+        "x": 7.35,
+        "y": 4.04298155737705
       },
       "isLocked": false,
-      "linkedName": "Start1"
+      "linkedName": "JustLeave"
     },
     {
       "anchor": {
-        "x": 6.185655737704918,
-        "y": 6.11685450819672
+        "x": 6.077766393442623,
+        "y": 4.04298155737705
       },
       "prevControl": {
-        "x": 8.047505558541392,
-        "y": 7.727804882978271
-      },
-      "nextControl": {
-        "x": 5.996600211826424,
-        "y": 5.953275756108297
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
-        "x": 5.3208059210526315,
-        "y": 5.37203947368421
-      },
-      "prevControl": {
-        "x": 6.12330077805626,
-        "y": 6.129503696062998
+        "x": 5.814036885245901,
+        "y": 4.0549692622950815
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Score3"
+      "linkedName": null
     }
   ],
   "rotationTargets": [],
@@ -58,10 +42,10 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -120.96375653207367
+    "rotation": 180.0
   },
   "reversed": false,
-  "folder": "Start1",
+  "folder": null,
   "idealStartingState": {
     "velocity": 0,
     "rotation": 180.0

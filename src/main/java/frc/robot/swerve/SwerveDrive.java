@@ -600,7 +600,7 @@ public class SwerveDrive implements Sendable {
         if (!this.isEnabled()) return;
 
         // System.out.println(getPose());
-        System.out.println(fieldCentric);
+        // System.out.println(fieldCentric);
         // if (fieldCentric) {
         //     System.out.println("yo");
         // }

@@ -140,7 +140,8 @@ public class RobotContainer {
       () -> this.m_driverController.getRawAxis(1), 
       () -> this.m_driverController.getRawAxis(0), 
       () -> -this.m_driverController.getRawAxis(2)
-      );
+    );
+    m_swerveDriveSubsystem.setFieldCentric(true);
       
     this.m_elevatorSubsystem = new ElevatorSubsystem();
     this.m_elevatorSubsystem.register();
@@ -195,7 +196,7 @@ public class RobotContainer {
     m_driverController.button(3).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.resetHeading()));
 
     // Auto-Align
-    m_driverController.button(7).debounce(0.1).toggleOnTrue(
+    m_driverController.button(7).debounce(0.1).onTrue(
       new InstantCommand(() -> {
         Optional<Pose2d> targetPose = Limelight.getScoringPose(
             m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
@@ -208,7 +209,7 @@ public class RobotContainer {
           });
       })
     );
-    m_driverController.button(8).debounce(0.1).toggleOnTrue(
+    m_driverController.button(8).debounce(0.1).onTrue(
       new InstantCommand(() -> {
         Optional<Pose2d> targetPose = Limelight.getScoringPose(
             m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
@@ -360,12 +361,18 @@ public class RobotContainer {
     // });
 
     m_secondaryController.y().whileTrue(new StartEndCommand(
-      () -> m_clawSubsystem.setPivotVelocity(0.05), 
+      () -> {
+        m_clawSubsystem.setSetpointMode(false);
+        m_clawSubsystem.setPivotVelocity(0.05);
+      }, 
       () -> m_clawSubsystem.setPivotVelocity(0)
     ));
 
     m_secondaryController.a().whileTrue(new StartEndCommand(
-      () -> m_clawSubsystem.setPivotVelocity(-0.05), 
+      () -> {
+        m_clawSubsystem.setSetpointMode(false);
+        m_clawSubsystem.setPivotVelocity(-0.05);
+      }, 
       () -> m_clawSubsystem.setPivotVelocity(0)
     ));
 
@@ -383,7 +390,23 @@ public class RobotContainer {
       m_clawSubsystem
     ));
 
+    // Toggle Claw Level
+    // If left joystick up
+    m_secondaryController.axisGreaterThan(1, -0.5).onTrue(new InstantCommand(() -> {
+        m_clawSubsystem.setSetpointMode(true);
+        m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle);
+    }));
+    // If left joystick down
+    m_secondaryController.axisGreaterThan(1, 0.5).onTrue(new InstantCommand(() -> {
+      m_clawSubsystem.setSetpointMode(true);
+      m_clawSubsystem.setPositionSetpoint(ClawPosition.Score);
+  }));
+
     m_secondaryController.start().onTrue(new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Intake)));
+
+    m_secondaryController.button(7).onTrue(new InstantCommand(() -> {
+      m_clawSubsystem.zeroClaw();
+    }));
 
     Command scoreAlgaeCommand = new StartEndCommand(
       () -> m_algaeIntakeSubsystem.scoreAlgae(),
@@ -522,15 +545,15 @@ public class RobotContainer {
       }
     });
 
-    m_driverController.button(8).whileTrue(new Command() {
-      private boolean on = true;
+    // m_driverController.button(8).whileTrue(new Command() {
+    //   private boolean on = true;
 
-      @Override
-      public void initialize() {
-        on = !on;
-        m_swerveDriveSubsystem.setFullSpeed(on);
-      }
-    });
+    //   @Override
+    //   public void initialize() {
+    //     on = !on;
+    //     m_swerveDriveSubsystem.setFullSpeed(on);
+    //   }
+    // });
     
 
     // LED Subsystem

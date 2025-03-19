@@ -194,7 +194,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       pose, 
       new PathConstraints(
         this.swerveDrive.getMaxDriveSpeed(MetersPerSecond) / 2.0, 
-        this.swerveDrive.getMaxDriveAccel(MetersPerSecondPerSecond) / 4.0, 
+        this.swerveDrive.getMaxDriveAccel(MetersPerSecondPerSecond) / 8.0, 
         this.swerveDrive.getMaxTurnSpeed(RadiansPerSecond), 
         this.swerveDrive.getMaxTurnAccel(RadiansPerSecond.per(Second))
       )

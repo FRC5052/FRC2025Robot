@@ -19,8 +19,8 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
-    public static final Transform2d kScoreRightOffset = new Transform2d(0.5,0.18, new Rotation2d(Math.PI));
-    public static final Transform2d kScoreLeftOffset = new Transform2d(0.5,-0.18, new Rotation2d(Math.PI));
+    public static final Transform2d kScoreRightOffset = new Transform2d(0.65,0.17, new Rotation2d(Math.PI)); //0.58, 0.17
+    public static final Transform2d kScoreLeftOffset = new Transform2d(0.65,-0.17, new Rotation2d(Math.PI)); 
     public static final Transform2d kScoreCenterOffset = new Transform2d(0.5,0.0, new Rotation2d(Math.PI));
     // TODO: Add constant for intial pose on blue side (red side will be accounted for with code)
   }

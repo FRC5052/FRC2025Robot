@@ -21,6 +21,7 @@ public class ClawSubsystem extends SubsystemBase {
     private ProfiledPIDController pid;
     private ClawPosition clawPosition;
     private DigitalInput intakeLimit;
+    private boolean setpointMode;
 
 
     public ClawSubsystem() {
@@ -40,6 +41,8 @@ public class ClawSubsystem extends SubsystemBase {
         this.pid.setTolerance(0.01);
         this.clawPosition = ClawPosition.Idle;
         this.pivotMotor.getEncoder().setPosition(0);
+
+        this.setpointMode = true;
 
         SmartDashboard.putData("elevator", this);
         SmartDashboard.putData("elevator/feedback", this.pid);
@@ -146,23 +149,45 @@ public class ClawSubsystem extends SubsystemBase {
         return pivotMotor.getEncoder().getVelocity();
     }
 
-    public void setMotor() {
+    public boolean getSetpointMode() {
+        return setpointMode;
+    }
+
+    public void setSetpointMode(boolean b) {
+        this.setpointMode = b;
+    }
+
+    public void setMotorSetpoint() {
         double output = pid.calculate(getMeasuredPosition());
         // double output = pid.getSetpoint().position-getMeasuredPosition()*0.5;
         // System.out.println("output: " + output + " | pos: " + getMeasuredPosition() + " | setpoint: " + getPositionSetpoint() + " | error: " + Math.abs(getMeasuredPosition()-getPositionSetpoint()));
-        setPivotVelocity(output);
+        if (setpointMode) {
+            pivotMotor.set(output);
+        }
+    }
+
+    public void zeroClaw() {
+        pivotMotor.getEncoder().setPosition(ClawConstants.kIdlePosition);
+        clawPosition = ClawPosition.Idle;
+        setpointMode = false;
     }
 
     public void setPivotVelocity(double speed) {
-        System.out.println(getMeasuredPosition());
-        if (!(speed > 0 && getMeasuredPosition() > 0) && !(speed < 0 && getMeasuredPosition() < ClawConstants.kScorePosition)) {
-            System.out.println("Moving claw " + speed);
+        if (!setpointMode) {
             pivotMotor.set(speed);
-        } else {
-            System.out.println("Not moving claw");
-            pivotMotor.stopMotor();
         }
     }
+
+    // public void setMotor(double speed) {
+    //     System.out.println(getMeasuredPosition());
+    //     if (!(speed > 0 && getMeasuredPosition() > 0) && !(speed < 0 && getMeasuredPosition() < ClawConstants.kScorePosition)) {
+    //         System.out.println("Moving claw " + speed);
+    //         pivotMotor.set(speed);
+    //     } else {
+    //         System.out.println("Not moving claw");
+    //         pivotMotor.stopMotor();
+    //     }
+    // }
 
     public void zeroEncoder() {
         pivotMotor.getEncoder().setPosition(0);
@@ -171,6 +196,9 @@ public class ClawSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         // System.out.println(getMeasuredPosition());
+        if (setpointMode) {
+            setMotorSetpoint();
+        }
         // setMotor();
         // If limit switch activated, make sure velocity can only be set to negative (ejecting coral)
         // TODO Remove the short circuit (|| true)
