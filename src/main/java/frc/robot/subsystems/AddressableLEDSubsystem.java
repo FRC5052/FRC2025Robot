@@ -23,11 +23,20 @@ public class AddressableLEDSubsystem extends SubsystemBase {
     private final AddressableLEDSubsystem parent;
     private int offset;
     private int length;
+    private boolean reversed;
 
     private AddressableLEDSlice(AddressableLEDSubsystem parent, int offset, int length) {
       this.parent = parent;
       this.offset = offset;
       this.length = length;
+      this.reversed = false;
+    }
+
+    private AddressableLEDSlice(AddressableLEDSubsystem parent, int offset, int length, boolean reversed) {
+      this.parent = parent;
+      this.offset = offset;
+      this.length = length;
+      this.reversed = reversed;
     }
 
     public int getOffset() {
@@ -52,6 +61,14 @@ public class AddressableLEDSubsystem extends SubsystemBase {
       this.length = length;
     }
 
+    public void setReversed(boolean b) {
+      this.reversed = b;
+    }
+
+    public boolean getReversed() {
+      return this.reversed;
+    }
+
     public void fill(Color color) {
       for (int i = offset; i < length+offset; i++) {
         parent.set(i, color);
@@ -67,10 +84,19 @@ public class AddressableLEDSubsystem extends SubsystemBase {
     
     public void setFunc(DoubleFunction<Color> func, int startOffset, int endOffset) {
       if (startOffset>length || endOffset > length) { return; }
-      for (int i = offset+startOffset; i < length+offset-endOffset; i++) {
-        double value = (((double)(i-offset))/(double)length);
-        if (func.apply(value)!=null) {
-          parent.set(i, func.apply(value));
+      if (!reversed) {
+        for (int i = offset+startOffset; i < length+offset-endOffset; i++) {
+          double value = (((double)(i-offset))/(double)length);
+          if (func.apply(value)!=null) {
+            parent.set(i, func.apply(value));
+          }
+        }
+      } else {
+        for (int i = length+offset-endOffset-1; i >= offset+startOffset; i--) {
+          double value = (((double)(i-offset))/(double)length);
+          if (func.apply(value)!=null) {
+            parent.set(i, func.apply(value));
+          }
         }
       }
     }
@@ -156,8 +182,12 @@ public class AddressableLEDSubsystem extends SubsystemBase {
     );
   }
 
+  public AddressableLEDSlice createSlice(int offset, int length, boolean reversed) {
+    return new AddressableLEDSlice(this, offset, length, reversed);
+  }
+
   public AddressableLEDSlice createSlice(int offset, int length) {
-    return new AddressableLEDSlice(this, offset, length);
+    return this.createSlice(offset, length, false);
   }
 
   public AddressableLEDSlice createSlice() {

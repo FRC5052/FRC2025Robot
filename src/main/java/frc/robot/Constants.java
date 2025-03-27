@@ -50,33 +50,26 @@ public final class Constants {
 
     // Zero and max position of motor (rotations)
     public static final double bottom = 0;
-    public static final double top = 48.5; // 49.23
+    public static final double top = -48.5; // 49.23
 
-    public static final int kLimitSwitchPort = 2;
+    public static final int kLimitSwitchPort = 3;
 
     // Gear ratio: ~8.53
     public static final double gearRatio = 8.53;
 
   }
 
-  //TODO: set these later
   public static class ClawConstants {
-    // Motor CAN IDs
-    public static final int kPivotMotorID = 16; 
-    public static final int kIntakeMotorID = 17;
+    public static final int kIntakeMotorID = 15; // TODO: update
+    public static final double kIntakeVelocity = 0.3;
     public static final int kLimitSwitchPort = 1;
-    // PID Constants
-    public static final double kP = 0.4;
-    public static final double kI = 0;
-    public static final double kD = 0;
+  }
 
-    public static final double kMaxVelocity = 15;
-    public static final double kMaxAcceleration = 15;
-    public static final double kIntakeVelocity = 0.2;
-    // Claw Positions
-    public static final double kIdlePosition = 0;
-    public static final double kIntakePosition = -0.75;
-    public static final double kScorePosition = -1.2; // -1.214
+  public static class IntakeConstants {
+    public static final int kIntakeMotorID = 16; // TODO: update
+    public static final int kFollowerMotorID = 17; // TODO: update
+    public static final double kIntakeVelocity = -0.3;
+    public static final int kLimitSwitchPort = 2;
   }
 
   public static class AlgaeIntakeConstants {
@@ -96,4 +89,23 @@ public final class Constants {
     public static final double kIdlePosition = 0;
     public static final double kScorePosition = 15; // -0.429;
   }
+
+  // public static class ExampleConstants {
+  //   // Motor CAN IDs
+  //   public static final int kPivotMotorID = 16; 
+  //   public static final int kIntakeMotorID = 17;
+  //   public static final int kLimitSwitchPort = 1;
+  //   // PID Constants
+  //   public static final double kP = 0.4;
+  //   public static final double kI = 0;
+  //   public static final double kD = 0;
+
+  //   public static final double kMaxVelocity = 15;
+  //   public static final double kMaxAcceleration = 15;
+  //   public static final double kIntakeVelocity = 0.2;
+  //   // Claw Positions
+  //   public static final double kIdlePosition = 0;
+  //   public static final double kIntakePosition = -0.75;
+  //   public static final double kScorePosition = -1.2; // -1.214
+  // }
 }

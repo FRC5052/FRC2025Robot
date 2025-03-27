@@ -235,7 +235,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     }
     if (DriverStation.isEnabled()) {
       Limelight.setRobotYaw(this.swerveDrive.getPoseAngle(Radians), this.swerveDrive.getActualSpeeds().omegaRadiansPerSecond, Radians, RadiansPerSecond);
-      var aprilTagPose = Limelight.getFieldCentricRobotPose(Meters, true);
+      var aprilTagPose = Limelight.getFieldCentricRobotPose(Meters, false);
       if (aprilTagPose.isPresent() && this.seeingAprilTag) {
         double rotation = this.swerveDrive.getActualHeading(Radians) + Math.PI;
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Red)) {

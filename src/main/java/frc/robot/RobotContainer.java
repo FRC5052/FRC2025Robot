@@ -9,10 +9,9 @@ import frc.robot.Constants.LEDConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.subsystems.AddressableLEDSubsystem;
-import frc.robot.subsystems.AlgaeIntakeSubsystem;
+// import frc.robot.subsystems.AlgaeIntakeSubsystem;
 import frc.robot.subsystems.AddressableLEDSubsystem.AddressableLEDSlice;
-import frc.robot.subsystems.AlgaeIntakeSubsystem.AlgaeIntakePosition;
-import frc.robot.subsystems.ClawSubsystem.ClawPosition;
+// import frc.robot.subsystems.AlgaeIntakeSubsystem.AlgaeIntakePosition;
 import frc.robot.subsystems.ClimbSubsystem.ClimbPosition;
 import frc.robot.subsystems.ClawSubsystem;
 import frc.robot.subsystems.ClimbSubsystem;
@@ -103,8 +102,9 @@ public class RobotContainer {
   public final SwerveDriveSubsystem m_swerveDriveSubsystem;
   public final ElevatorSubsystem m_elevatorSubsystem;
   public final ClawSubsystem m_clawSubsystem;
-  public final ClimbSubsystem m_climbSubsystem;
-  public final AlgaeIntakeSubsystem m_algaeIntakeSubsystem;
+  public final IntakeSubsystem m_intakeSubsystem;
+  // public final ClimbSubsystem m_climbSubsystem;
+  // public final AlgaeIntakeSubsystem m_algaeIntakeSubsystem;
   public final AddressableLEDSubsystem m_ledSubsystem;
   private AddressableLEDSlice leftSlice;
   private AddressableLEDSlice topSlice;
@@ -134,7 +134,7 @@ public class RobotContainer {
     m_ledSubsystem = new AddressableLEDSubsystem(LEDConstants.kLEDPort, LEDConstants.kLEDLength);
     leftSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDLeftSlice[0], LEDConstants.kLEDLeftSlice[1]-LEDConstants.kLEDLeftSlice[0]);
     topSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDTopSlice[0], LEDConstants.kLEDTopSlice[1]-LEDConstants.kLEDTopSlice[0]);
-    rightSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDRightSlice[0], LEDConstants.kLEDRightSlice[1]-LEDConstants.kLEDRightSlice[0]);
+    rightSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDRightSlice[0], LEDConstants.kLEDRightSlice[1]-LEDConstants.kLEDRightSlice[0], true);
 
     this.m_swerveDriveSubsystem = new SwerveDriveSubsystem(
       () -> this.m_driverController.getRawAxis(1), 
@@ -144,28 +144,40 @@ public class RobotContainer {
     m_swerveDriveSubsystem.setFieldCentric(true);
       
     this.m_elevatorSubsystem = new ElevatorSubsystem();
-    this.m_elevatorSubsystem.register();
+    // DO NOT DO THIS
+    // this.m_elevatorSubsystem.register();
 
     this.m_clawSubsystem = new ClawSubsystem();
-    this.m_clawSubsystem.register();
+    // DO NOT DO THIS
+    // this.m_clawSubsystem.register();
 
-    this.m_algaeIntakeSubsystem = new AlgaeIntakeSubsystem();
-    this.m_algaeIntakeSubsystem.register();
+    this.m_intakeSubsystem = new IntakeSubsystem();
 
-    this.m_climbSubsystem = new ClimbSubsystem();
-    this.m_climbSubsystem.register();
+    // this.m_algaeIntakeSubsystem = new AlgaeIntakeSubsystem();
+    // this.m_algaeIntakeSubsystem.register();
 
-    NamedCommands.registerCommand("L2/Trough", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L2)));
+    // this.m_climbSubsystem = new ClimbSubsystem();
+    // DO NOT DO THIS
+    // this.m_climbSubsystem.register();
+
+    NamedCommands.registerCommand("Home", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.Home)));
+    NamedCommands.registerCommand("Intake", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.Intake)));
+    NamedCommands.registerCommand("L1", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L1)));
+    NamedCommands.registerCommand("L2", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L2)));
     NamedCommands.registerCommand("L3", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L3)));
-    NamedCommands.registerCommand("Coral", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.Coral)));
-    NamedCommands.registerCommand("L4", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L4)));
     
-    NamedCommands.registerCommand("ScoreCoral", new InstantCommand(() -> m_clawSubsystem.scoreCoral()));
-    NamedCommands.registerCommand("ResetCoralIntake", new InstantCommand(() -> m_clawSubsystem.resetIntake()));
-
-    NamedCommands.registerCommand("ClawUp", new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle)));
-    NamedCommands.registerCommand("ClawIntake", new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Intake)));
-    NamedCommands.registerCommand("ClawDown", new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Score)));
+    NamedCommands.registerCommand("ClawScore", new InstantCommand(() -> {
+      m_clawSubsystem.scoreCoral();
+    }));
+    NamedCommands.registerCommand("ResetClaw", new InstantCommand(() -> {
+      m_clawSubsystem.resetIntake();
+    }));
+    NamedCommands.registerCommand("IntakeCoral", new InstantCommand(() -> {
+      m_intakeSubsystem.intakeCoral();
+    }));
+    NamedCommands.registerCommand("ResetCoralIntake", new InstantCommand(() -> {
+      m_clawSubsystem.resetIntake();
+    }));
 
     this.autoChooser = AutoBuilder.buildAutoChooser();
     
@@ -195,7 +207,7 @@ public class RobotContainer {
     // Reset Heading
     m_driverController.button(3).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.resetHeading()));
 
-    // Auto-Align
+    // Auto-Align Left
     m_driverController.button(7).debounce(0.1).onTrue(
       new InstantCommand(() -> {
         Optional<Pose2d> targetPose = Limelight.getScoringPose(
@@ -209,6 +221,7 @@ public class RobotContainer {
           });
       })
     );
+    //Auto-Align Right
     m_driverController.button(8).debounce(0.1).onTrue(
       new InstantCommand(() -> {
         Optional<Pose2d> targetPose = Limelight.getScoringPose(
@@ -223,7 +236,7 @@ public class RobotContainer {
       })
     );
 
-    // Toggle field centric
+    // Hold trigger for field centric
     m_driverController.button(1).whileTrue(new Command() {
       @Override
       public void execute() {
@@ -234,40 +247,8 @@ public class RobotContainer {
         m_swerveDriveSubsystem.setFieldCentric(true);
       }
     });
-    
-    // m_driverController.button(3).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.resetHeading()));
-    // m_driverController.button(4).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.setTargetPose(new Pose2d(9.5, 2.0, new Rotation2d(Radians.convertFrom(90.0, Degrees))))));
 
-    // Fine Adjustment
-    m_driverController.povLeft().onTrue(
-      new InstantCommand(() -> 
-        m_swerveDriveSubsystem.setTargetPose(
-          m_swerveDriveSubsystem.getSwerveDrive().getPose().plus(new Transform2d(0,-0.3,new Rotation2d(0)))
-        )
-      )
-    );
-    m_driverController.povRight().onTrue(
-      new InstantCommand(() -> 
-        m_swerveDriveSubsystem.setTargetPose(
-          m_swerveDriveSubsystem.getSwerveDrive().getPose().plus(new Transform2d(0,0.3,new Rotation2d(0)))
-        )
-      )
-    );
-    m_driverController.povUp().onTrue(
-      new InstantCommand(() -> 
-        m_swerveDriveSubsystem.setTargetPose(
-          m_swerveDriveSubsystem.getSwerveDrive().getPose().plus(new Transform2d(0.3,0,new Rotation2d(0)))
-        )
-      )
-    );
-    m_driverController.povDown().onTrue(
-      new InstantCommand(() -> 
-        m_swerveDriveSubsystem.setTargetPose(
-          m_swerveDriveSubsystem.getSwerveDrive().getPose().plus(new Transform2d(-0.3,0,new Rotation2d(0)))
-        )
-      )
-    );
-
+    // Makes sure controller can't do anything during auton
     Command secondControllerCommand = new Command() {
 
       @Override
@@ -275,276 +256,147 @@ public class RobotContainer {
         if (DriverStation.isAutonomousEnabled()) return;
       }
     };
-
     secondControllerCommand.setName("Teleop Intake");
 
-    Command ledElevatorHeightCommand = new Command() {
-      double height;
-      double setHeight;
-
-      @Override
-      public void initialize() {
-        height = m_elevatorSubsystem.getMeasuredHeight();
-        setHeight = m_elevatorSubsystem.getHeightSetpoint();
-      }
-
-      @Override
-      public void execute() {
-        if (height <= setHeight) {
-          leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kOrange, Color.kBlack);
-          leftSlice.setMeter(ElevatorConstants.top, height, Color.kRed, Color.kBlack);
-          rightSlice.setMeter(ElevatorConstants.top, setHeight, Color.kOrange, Color.kBlack);
-          rightSlice.setMeter(ElevatorConstants.top, height, Color.kRed, Color.kBlack);
-        } else {
-          leftSlice.setMeter(ElevatorConstants.top, height, Color.kOrange, Color.kBlack);
-          leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kRed, null);
-          rightSlice.setMeter(ElevatorConstants.top, height, Color.kOrange, Color.kBlack);
-          rightSlice.setMeter(ElevatorConstants.top, setHeight, Color.kRed, null);
-        }
-        height = m_elevatorSubsystem.getMeasuredHeight();
-        setHeight = m_elevatorSubsystem.getHeightSetpoint();
-      }
-    };
-
-    
-    Command scoreCoralCommand = new SequentialCommandGroup(
-      new InstantCommand(() -> m_clawSubsystem.scoreCoral()),
-      new WaitCommand(1.0),
-      new InstantCommand(() -> m_clawSubsystem.resetIntake())
-    );
-    scoreCoralCommand.addRequirements(m_clawSubsystem);
-
-    Command intakeCoralCommand = new SequentialCommandGroup(
-      new InstantCommand(() -> m_clawSubsystem.intakeCoral()),
-      new WaitCommand(1.0),
-      new InstantCommand(() -> m_clawSubsystem.resetIntake())
-    );
-    intakeCoralCommand.addRequirements(m_clawSubsystem);
-
-    
-
-    InstantCommand resetClawCommand = new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle));
-    resetClawCommand.addRequirements(m_clawSubsystem);
-
-    // Increase Level
+    // Increase Elevator Level
     m_secondaryController.rightTrigger().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().next())));
 
-    // Decrease Level
+    // Decrease Elevator Level
     m_secondaryController.leftTrigger().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().prev())));
 
-    // Toggle Claw Level
-    // m_secondaryController.a().onTrue(new ConditionalCommand(
-    //   new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Score)), 
-    //   new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle)), 
-    //   () -> m_clawSubsystem.getClawPosition() == ClawPosition.Idle
+    // // When y pushed, switch to manual mode and move up
+    // m_secondaryController.y().whileTrue(new StartEndCommand(
+    //   () -> {
+    //     m_clawSubsystem.setSetpointMode(false);
+    //     m_clawSubsystem.setPivotVelocity(0.05);
+    //   }, 
+    //   () -> m_clawSubsystem.setPivotVelocity(0)
     // ));
 
-    // // When y clicked, turn to velocity mode, then reset pivot encoder to 0 when released
-    // m_secondaryController.y().whileTrue(new Command() {
-    //   @Override
-    //   public void execute() {
-    //       if (m_secondaryController.getLeftY() < -0.5) {
-    //         m_clawSubsystem.setPivotVelocity(0.05);
-    //       } else if (m_secondaryController.getLeftY() > 0.5) {
-    //         m_clawSubsystem.setPivotVelocity(-0.05);
-    //       } else {
-    //         m_clawSubsystem.setPivotVelocity(0);
-    //       }
-    //   }
+    // // When a pushed, switch to manual mode and move down
+    // m_secondaryController.a().whileTrue(new StartEndCommand(
+    //   () -> {
+    //     m_clawSubsystem.setSetpointMode(false);
+    //     m_clawSubsystem.setPivotVelocity(-0.05);
+    //   }, 
+    //   () -> m_clawSubsystem.setPivotVelocity(0)
+    // ));
 
-    //   @Override
-    //       public void end(boolean interrupted) {
-    //           m_clawSubsystem.setPivotVelocity(0);
-    //           m_clawSubsystem.zeroEncoder();
-    //           m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle);
-    //       }
-    // });
+    // // Toggle Claw Level
+    // // If left joystick up, set claw to Idle position
+    // m_secondaryController.axisGreaterThan(1, -0.5).onTrue(new InstantCommand(() -> {
+    //   m_clawSubsystem.setSetpointMode(true);
+    //   m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle);
+    // }));
+    // // If left joystick down, set claw to Score position
+    // m_secondaryController.axisGreaterThan(1, 0.5).onTrue(new InstantCommand(() -> {
+    //   m_clawSubsystem.setSetpointMode(true);
+    //   m_clawSubsystem.setPositionSetpoint(ClawPosition.Score);
+    // }));
 
-    m_secondaryController.y().whileTrue(new StartEndCommand(
-      () -> {
-        m_clawSubsystem.setSetpointMode(false);
-        m_clawSubsystem.setPivotVelocity(0.05);
-      }, 
-      () -> m_clawSubsystem.setPivotVelocity(0)
-    ));
+    // // If start clicked, set claw to Intake position
+    // m_secondaryController.start().onTrue(new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Intake)));
 
-    m_secondaryController.a().whileTrue(new StartEndCommand(
-      () -> {
-        m_clawSubsystem.setSetpointMode(false);
-        m_clawSubsystem.setPivotVelocity(-0.05);
-      }, 
-      () -> m_clawSubsystem.setPivotVelocity(0)
-    ));
+    // // If select pressed, zero the claw
+    // m_secondaryController.button(7).onTrue(new InstantCommand(() -> {
+    //   m_clawSubsystem.zeroClaw();
+    // }));
 
-    // Score Coral
+    // When x pressed, release coral, when released, stop intake
     m_secondaryController.x().whileTrue(new StartEndCommand(
-      () -> m_clawSubsystem.scoreCoral(), 
-      () -> m_clawSubsystem.resetIntake(), 
+      () -> {
+        m_clawSubsystem.scoreCoral();
+        m_intakeSubsystem.intakeCoral();
+      }, 
+      () -> {
+        m_clawSubsystem.resetIntake();
+        m_intakeSubsystem.resetIntake();
+      }, 
       m_clawSubsystem
     ));
 
-    // Intake Coral
+    // When b pressed, intake coral, when released, stop intake
     m_secondaryController.b().whileTrue(new StartEndCommand(
-      () -> m_clawSubsystem.intakeCoral(), 
-      () -> m_clawSubsystem.resetIntake(), 
+      () -> {
+        m_clawSubsystem.intakeCoral();
+        m_intakeSubsystem.ejectCoral();
+      }, 
+      () -> {
+        m_clawSubsystem.resetIntake();
+        m_intakeSubsystem.resetIntake();
+      }, 
       m_clawSubsystem
     ));
 
-    // Toggle Claw Level
-    // If left joystick up
-    m_secondaryController.axisGreaterThan(1, -0.5).onTrue(new InstantCommand(() -> {
-        m_clawSubsystem.setSetpointMode(true);
-        m_clawSubsystem.setPositionSetpoint(ClawPosition.Idle);
-    }));
-    // If left joystick down
-    m_secondaryController.axisGreaterThan(1, 0.5).onTrue(new InstantCommand(() -> {
-      m_clawSubsystem.setSetpointMode(true);
-      m_clawSubsystem.setPositionSetpoint(ClawPosition.Score);
-  }));
+    // Command scoreAlgaeCommand = new StartEndCommand(
+    //   () -> m_algaeIntakeSubsystem.scoreAlgae(),
+    //   () -> m_algaeIntakeSubsystem.resetIntake()  
+    // );
+    // Command intakeAlgaeCommand = new StartEndCommand(
+    //   () -> m_algaeIntakeSubsystem.intakeAlgae(),
+    //   () -> m_algaeIntakeSubsystem.resetIntake()  
+    // );
 
-    m_secondaryController.start().onTrue(new InstantCommand(() -> m_clawSubsystem.setPositionSetpoint(ClawPosition.Intake)));
-
-    m_secondaryController.button(7).onTrue(new InstantCommand(() -> {
-      m_clawSubsystem.zeroClaw();
-    }));
-
-    Command scoreAlgaeCommand = new StartEndCommand(
-      () -> m_algaeIntakeSubsystem.scoreAlgae(),
-      () -> m_algaeIntakeSubsystem.resetIntake()  
-    );
-
-    Command intakeAlgaeCommand = new StartEndCommand(
-      () -> m_algaeIntakeSubsystem.intakeAlgae(),
-      () -> m_algaeIntakeSubsystem.resetIntake()  
-    );
-    
-    Command algaeArmOutCommand = new InstantCommand(() -> m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Score));
-    
-    Command algaeArmInCommand = new InstantCommand(() -> m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Idle));
-
-    // Algae Arm Out
-    m_secondaryController.povUp().whileTrue(new StartEndCommand(
-      () -> m_algaeIntakeSubsystem.setPivotVelocity(0.05), 
-      () -> m_algaeIntakeSubsystem.setPivotVelocity(0)
-    ));
-
-    // Algae Arm In
-    m_secondaryController.povDown().whileTrue(new StartEndCommand(
-      () -> m_algaeIntakeSubsystem.setPivotVelocity(-0.05), 
-      () -> m_algaeIntakeSubsystem.setPivotVelocity(0)
-    ));
-
-    m_secondaryController.povRight().whileTrue(scoreAlgaeCommand);
-    m_secondaryController.povLeft().whileTrue(intakeAlgaeCommand);
-
-    m_secondaryController.povDownLeft().whileTrue(
-      new StartEndCommand(
-        () -> {
-          // m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Idle);
-          m_algaeIntakeSubsystem.setPivotVelocity(-0.05);
-          m_algaeIntakeSubsystem.intakeAlgae();
-        },
-        () -> {
-          m_algaeIntakeSubsystem.resetIntake();
-          m_algaeIntakeSubsystem.setPivotVelocity(0);
-        }
-      )
-    );
-
-    m_secondaryController.povUpRight().whileTrue(
-      new StartEndCommand(
-        () -> {
-          // m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Score);
-          m_algaeIntakeSubsystem.setPivotVelocity(0.05);
-          m_algaeIntakeSubsystem.scoreAlgae();
-        },
-        () -> {
-          m_algaeIntakeSubsystem.resetIntake();
-          m_algaeIntakeSubsystem.setPivotVelocity(0);
-        }
-      )
-    );
-
-    // m_driverController.button(1).onFalse(
-    //   new InstantCommand(() -> {
-    //     if (m_driverController.button(6).getAsBoolean()) {
-    //       Optional<Pose2d> targetPose = Limelight.getScoringPose(
-    //         m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-    //         OperatorConstants.kScoreRightOffset,
-    //         Meter
-    //       );
-    //       targetPose.ifPresent((Pose2d pose) -> {
-    //         m_swerveDriveSubsystem.setTargetPose(pose);
-    //         topSlice.setColor(0, 255, 0);
-    //       });
-    //     } else if (m_driverController.button(5).getAsBoolean()) {
-    //       Optional<Pose2d> targetPose = Limelight.getScoringPose(
-    //         m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-    //         OperatorConstants.kScoreLeftOffset,
-    //         Meter
-    //       );
-    //       targetPose.ifPresent((Pose2d pose) -> {
-    //         m_swerveDriveSubsystem.setTargetPose(pose);
-    //         topSlice.setColor(0, 255, 0);
-    //       });
-    //     } else {
-    //       Optional<Pose2d> targetPose = Limelight.getScoringPose(
-    //         m_swerveDriveSubsystem.getSwerveDrive().getPose(), 
-    //         OperatorConstants.kScoreCenterOffset,
-    //         Meter
-    //       );
-    //       targetPose.ifPresent((Pose2d pose) -> {
-    //         m_swerveDriveSubsystem.setTargetPose(pose);
-    //         topSlice.setColor(0, 255, 0);
-    //       });
-    //     }
-    //   }
+    // // Algae Arm Out
+    // m_secondaryController.povUp().whileTrue(new StartEndCommand(
+    //   () -> m_algaeIntakeSubsystem.setPivotVelocity(0.05), 
+    //   () -> m_algaeIntakeSubsystem.setPivotVelocity(0)
     // ));
 
-    // m_secondaryController.povUp().whileTrue(new Command() {
-    //   @Override
-    //   public void initialize() {
-    //     m_clawSubsystem.scoreCoral();
-    //   }
+    // // Algae Arm In
+    // m_secondaryController.povDown().whileTrue(new StartEndCommand(
+    //   () -> m_algaeIntakeSubsystem.setPivotVelocity(-0.05), 
+    //   () -> m_algaeIntakeSubsystem.setPivotVelocity(0)
+    // ));
+
+    // // Score Algae
+    // m_secondaryController.povRight().whileTrue(scoreAlgaeCommand);
+
+    // // Intake Algae
+    // m_secondaryController.povLeft().whileTrue(intakeAlgaeCommand);
+
+    // // Move algae arm down and intake
+    // m_secondaryController.povDownLeft().whileTrue(
+    //   new StartEndCommand(
+    //     () -> {
+    //       // m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Idle);
+    //       m_algaeIntakeSubsystem.setPivotVelocity(-0.05);
+    //       m_algaeIntakeSubsystem.intakeAlgae();
+    //     },
+    //     () -> {
+    //       m_algaeIntakeSubsystem.resetIntake();
+    //       m_algaeIntakeSubsystem.setPivotVelocity(0);
+    //     }
+    //   )
+    // );
+
+    // // Move algae arm up and score
+    // m_secondaryController.povUpRight().whileTrue(
+    //   new StartEndCommand(
+    //     () -> {
+    //       // m_algaeIntakeSubsystem.setPositionSetpoint(AlgaeIntakePosition.Score);
+    //       m_algaeIntakeSubsystem.setPivotVelocity(0.05);
+    //       m_algaeIntakeSubsystem.scoreAlgae();
+    //     },
+    //     () -> {
+    //       m_algaeIntakeSubsystem.resetIntake();
+    //       m_algaeIntakeSubsystem.setPivotVelocity(0);
+    //     }
+    //   )
+    // );
+
+    // Toggle field-centric
+    // m_driverController.button(7).whileTrue(new Command() {
+    //   private boolean on = true;
 
     //   @Override
-    //   public void end(boolean interrupted) {
-    //     m_clawSubsystem.resetIntake();
+    //   public void initialize() {
+    //     on = !on;
+    //     m_swerveDriveSubsystem.setFieldCentric(on);
     //   }
     // });
 
-    // m_secondaryController.povDown().whileTrue(new Command() {
-    //   @Override
-    //   public void initialize() {
-    //     m_clawSubsystem.intakeCoral();
-    //   }
-
-    //   @Override
-    //   public void end(boolean interrupted) {
-    //     m_clawSubsystem.resetIntake();
-    //   }
-    // });
-
-    // m_secondaryController.x().whileTrue(new Command() {
-    //   private ClimbPosition position = ClimbPosition.Idle;
-
-    //   @Override
-    //   public void initialize() {
-    //     position = position.next();
-    //     m_climbSubsystem.setPositionSetpoint(position);
-    //   }
-    // });
-
-    m_driverController.button(7).whileTrue(new Command() {
-      private boolean on = true;
-
-      @Override
-      public void initialize() {
-        on = !on;
-        m_swerveDriveSubsystem.setFieldCentric(on);
-      }
-    });
-
+    // Toggle slow mode
     // m_driverController.button(8).whileTrue(new Command() {
     //   private boolean on = true;
 
@@ -557,7 +409,6 @@ public class RobotContainer {
     
 
     // LED Subsystem
-
     Command ledIdleCommand = new Command() {
       Timer timer = new Timer();
       double height;
@@ -589,25 +440,19 @@ public class RobotContainer {
           if (height <= setHeight) {
             leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kOrange, null);
             leftSlice.setMeter(ElevatorConstants.top, height, Color.kRed, null);
-            rightSlice.setMeter(1-ElevatorConstants.top/setHeight, null, Color.kOrange);
-            rightSlice.setMeter(1-ElevatorConstants.top/setHeight, null, Color.kRed);
+            rightSlice.setMeter(ElevatorConstants.top, setHeight, Color.kOrange, null);
+            rightSlice.setMeter(ElevatorConstants.top, height, Color.kRed, null);
           } else {
             leftSlice.setMeter(ElevatorConstants.top, height, Color.kOrange, null);
             leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kRed, null);
-            rightSlice.setMeter(1-ElevatorConstants.top/setHeight, null, Color.kOrange);
-            rightSlice.setMeter(1-ElevatorConstants.top/setHeight, null, Color.kRed);
+            rightSlice.setMeter(ElevatorConstants.top, height, Color.kOrange, null);
+            rightSlice.setMeter(ElevatorConstants.top, setHeight, Color.kRed, null);
           }
         }
         m_ledSubsystem.display();
       };
     };
     ledIdleCommand.addRequirements(m_ledSubsystem);
-
-    // ConditionalCommand ledDefaultCommand = new ConditionalCommand(
-    //   ledIdleCommand, 
-    //   ledElevatorHeightCommand, 
-    //   () -> m_elevatorSubsystem.getLevelSetpoint().isPresent() ? m_elevatorSubsystem.getLevelSetpoint().get().height()>10 : true
-    // );
     m_ledSubsystem.setDefaultCommand(ledIdleCommand);
   }
 
