@@ -40,21 +40,21 @@ public class ClawSubsystem extends SubsystemBase {
         return this.intakeMotor.get();
     }
 
-    public void scoreCoral() {
+    public void score() {
         // TODO Remove the short circuit (|| true)
         if(!intakeLimit.get() || true) {
-            setIntakeVelocity(ClawConstants.kIntakeVelocity);
+            setIntakeVelocity(ClawConstants.kScoreVelocity);
         }
     }
 
-    public void intakeCoral() {
+    public void intake(boolean reverse) {
         // TODO Remove the short circuit (|| true)
         if(intakeLimit.get() || true) {
-            setIntakeVelocity(-ClawConstants.kIntakeVelocity);
+            setIntakeVelocity(reverse ? -ClawConstants.kIntakeVelocity : ClawConstants.kIntakeVelocity);
         }
     }
 
-    public void resetIntake() {
+    public void stop() {
         setIntakeVelocity(0);
     }
 }

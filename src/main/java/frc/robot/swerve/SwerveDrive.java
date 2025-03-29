@@ -46,6 +46,8 @@ import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.RobotState;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -72,7 +74,7 @@ public class SwerveDrive implements Sendable {
     private double maxTurnAccel = 0.0;
     private PIDController moduleDriveController = new PIDController(0, 0, 0), modulePivotController = new PIDController(0, 0, 0);
     private ProfiledPIDController headingController = new ProfiledPIDController(0, 0, 0, new TrapezoidProfile.Constraints(0, 0));
-    private boolean fieldCentric;
+    private boolean fieldCentricTargetSpeeds;
     private ChassisSpeeds actualSpeeds = new ChassisSpeeds();
     private SwerveModuleState[] wheelStates;
     private final SwerveModuleState[] actualWheelStates;
@@ -119,7 +121,7 @@ public class SwerveDrive implements Sendable {
     public SwerveDrive(Pose2d initialPose, SwerveIMU imu, SwerveModule... modules) {
         this.imu = imu;
         this.imu.calibrate();
-        this.imu.zeroHeading();
+        this.imu.resetHeading();
         this.modules = modules;
         this.pose = initialPose;
         Translation2d[] positions = new Translation2d[this.modules.length];
@@ -142,7 +144,7 @@ public class SwerveDrive implements Sendable {
         );
         this.field.setRobotPose(this.pose);
         tagTarget = field.getObject("tagTarget");
-        this.imu.zeroHeading();
+        this.imu.resetHeading();
         SmartDashboard.putData("field", this.field);
         SmartDashboard.putData("swerveDrive/drivePID", this.moduleDriveController);
         SmartDashboard.putData("swerveDrive/pivotPID", this.modulePivotController);
@@ -186,21 +188,22 @@ public class SwerveDrive implements Sendable {
         return this.imu;
     }
 
-    /**
-     * Configures whether this swerve drive should be field centric or not.
-     * @param fieldCentric If this swerve drive should be field centric.
-     */
-    public void setIsFieldCentric(boolean fieldCentric) {
-        this.fieldCentric = fieldCentric; // fieldCentric;
-    }
+    // /**
+    //  * Configures whether this swerve drive should be field centric or not.
+    //  * @param fieldCentric If this swerve drive should be field centric.
+    //  */
+    // public void setIsFieldCentric(boolean fieldCentric) {
+    //     System.out.println("fieldcentric <- " + fieldCentric);
+    //     this.fieldCentricTargetSpeeds = fieldCentric; // fieldCentric;
+    // }
 
-    /**
-     * Returns whether this swerve drive is field centric or not.
-     * @return If this swerve drive is field centric.
-     */
-    public boolean isFieldCentric() {
-        return this.fieldCentric;
-    }
+    // /**
+    //  * Returns whether this swerve drive is field centric or not.
+    //  * @return If this swerve drive is field centric.
+    //  */
+    // public boolean isFieldCentricTargetSpeeds() {
+    //     return this.fieldCentricTargetSpeeds;
+    // }
 
     /**
      * Configures this swerve drive's maximum translational velocity.
@@ -396,7 +399,7 @@ public class SwerveDrive implements Sendable {
      * @param mode The heading control mode to use. This will change how the h value is interpreted.
      * @param fieldCentric If present, overrides the current fieldCentric setting.
      */
-    public void drive(double x, double y, double h, HeadingControlMode mode, Optional<Boolean> fieldCentric) {
+    public void drive(double x, double y, double h, HeadingControlMode mode, boolean fieldCentric) {
         x = MathUtil.clamp(x, -1.0, 1.0);
         y = MathUtil.clamp(y, -1.0, 1.0);
         h = MathUtil.clamp(h, -1.0, 1.0);
@@ -404,9 +407,7 @@ public class SwerveDrive implements Sendable {
         this.targetSpeeds.vxMetersPerSecond = this.maxDriveSpeed * x;
         this.targetSpeeds.vyMetersPerSecond = this.maxDriveSpeed * y; 
 
-        if (fieldCentric.isPresent()) {
-            this.fieldCentric = fieldCentric.get();
-        }
+        this.fieldCentricTargetSpeeds = fieldCentric;
 
         switch (mode) {
             case kHeadingChange:
@@ -430,11 +431,11 @@ public class SwerveDrive implements Sendable {
 
     /**
      * Sets the targeted drive speed to the given values.
-     * @param speeds The ChassisSpeeds object to apply. The values 
-     * @param isRobotRelative Whether the speeds value is robot centric, otherwise it is assumed to be field centric.
+     * @param speeds The ChassisSpeeds object to apply.
+     * @param fieldCentric Whether the speeds value is field centric, otherwise it is assumed to be robot centric.
      */
-    public void drive(ChassisSpeeds speeds, boolean isRobotRelative) {
-        if (isRobotRelative) speeds = ChassisSpeeds.fromRobotRelativeSpeeds(speeds, this.pose.getRotation());
+    public void drive(ChassisSpeeds speeds, boolean fieldCentric) {
+        this.fieldCentricTargetSpeeds = fieldCentric;
         this.targetSpeeds.vxMetersPerSecond = MathUtil.clamp(speeds.vxMetersPerSecond, -this.maxDriveSpeed, this.maxDriveSpeed);
         this.targetSpeeds.vyMetersPerSecond = MathUtil.clamp(speeds.vyMetersPerSecond, -this.maxDriveSpeed, this.maxDriveSpeed);
         this.targetSpeeds.omegaRadiansPerSecond = MathUtil.clamp(speeds.omegaRadiansPerSecond, -this.maxTurnSpeed, this.maxTurnSpeed);
@@ -503,16 +504,17 @@ public class SwerveDrive implements Sendable {
      * Resets the heading of this swerve drive such that the new reported heading is zero.
      */
     public void zeroHeading() {
-        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Blue)) {
-            this.imu.zeroHeading();
-            this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), new Rotation2d()));
-            this.targetHeading = this.targetHeading.map((x) -> new Rotation2d());
-        } else {
-            this.imu.zeroHeading();
-            this.imu.setHeadingOffset(180, Degree);
-            this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), new Rotation2d(Math.PI)));
-            this.targetHeading = this.targetHeading.map((x) -> new Rotation2d(Math.PI));
-        }
+        throw new UnsupportedOperationException("This shouldn't be called, check your implementation (and your life choices!)");
+        // if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Blue)) {
+        //     this.imu.resetHeading();
+        //     this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), Rotation2d.kZero));
+        //     this.targetHeading = this.targetHeading.map((x) -> Rotation2d.kZero);
+        // } else {
+        //     // this.imu.zeroHeading();
+        //     this.imu.setHeadingOffset(this.imu.getRawHeading(Degree) + 180, Degree);
+        //     this.setPose(new Pose2d(new Translation2d(this.pose.getX(), this.pose.getY()), Rotation2d.k180deg));
+        //     this.targetHeading = this.targetHeading.map((x) -> Rotation2d.k180deg);
+        // }
     }
 
     /** 
@@ -615,8 +617,12 @@ public class SwerveDrive implements Sendable {
             ), this.speeds.omegaRadiansPerSecond, Robot.kDefaultPeriod, this.maxTurnSpeed, this.maxTurnAccel)
         );
 
-        if (this.fieldCentric) {
-            this.wheelStates = this.kinematics.toSwerveModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(this.speeds, this.pose.getRotation()));
+        if (this.fieldCentricTargetSpeeds && DriverStation.getAlliance().isPresent()) {
+            if (DriverStation.getAlliance().get() == Alliance.Blue) {
+                this.wheelStates = this.kinematics.toSwerveModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(this.speeds, this.pose.getRotation()));
+            } else {
+                this.wheelStates = this.kinematics.toSwerveModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(this.speeds, this.pose.getRotation().plus(Rotation2d.k180deg)));
+            }
         } else {
             this.wheelStates = this.kinematics.toSwerveModuleStates(this.speeds);
         }
@@ -628,7 +634,7 @@ public class SwerveDrive implements Sendable {
             this.modules[i].update();
             this.wheelPositions[i] = this.modules[i].getActualPosition();
             this.wheelDeltaPositions[i] = this.modules[i].getActualDeltaPosition();
-            // this.wheelPositions[i].angle = this.wheelPositions[i].angle.rotateBy(new Rotation2d(Math.PI));
+            // this.wheelPositions[i].angle = this.wheelPositions[i].angle.rotateBy(Rotation2d.k180deg);
             this.actualWheelStates[i] = this.modules[i].getActualState();
         }
 
@@ -662,7 +668,7 @@ public class SwerveDrive implements Sendable {
         builder.setSmartDashboardType("SwerveDrive");
         builder.addDoubleProperty("imu/heading", () -> this.getPoseAngle(Degrees), null);
         builder.addDoubleProperty("imu/rawHeading", () -> -this.imu.getRawHeading(Degrees), null);
-        builder.addDoubleProperty("imu/headingSetpoint", () -> -this.targetHeading.orElse(new Rotation2d()).getDegrees(), null);
+        builder.addDoubleProperty("imu/headingSetpoint", () -> -this.targetHeading.orElse(Rotation2d.kZero).getDegrees(), null);
         builder.addDoubleProperty("imu/magneticHeading", () -> this.imu.getCompassHeading(Degrees), null);
         builder.addDoubleProperty("imu/headingOffset", () -> -this.imu.getHeadingOffset(Degrees), (double offset) -> this.imu.setHeadingOffset(-offset, Degrees));
         builder.addDoubleProperty("imu/velocity/x", () -> this.getVelocityX(MetersPerSecond), null);
@@ -701,7 +707,6 @@ public class SwerveDrive implements Sendable {
         private OptionalDouble maxTurnSpeed = OptionalDouble.empty();
         private OptionalDouble maxDriveAccel = OptionalDouble.empty();
         private OptionalDouble maxTurnAccel = OptionalDouble.empty();
-        private boolean fieldCentric = true;
 
         public Builder withModules(SwerveModule.Builder... modules) {
             this.modules = Optional.of(modules);
@@ -750,11 +755,6 @@ public class SwerveDrive implements Sendable {
 
         public Builder withMaxTurnAccel(double speed, AngularAccelerationUnit unit) {
             this.maxTurnAccel = OptionalDouble.of(unit.toBaseUnits(speed));
-            return this;
-        }
-
-        public Builder withFieldCentric(boolean fieldCentric) {
-            this.fieldCentric = fieldCentric;
             return this;
         }
 
@@ -824,10 +824,6 @@ public class SwerveDrive implements Sendable {
                     this.withMaxTurnAccel(json_inner.doubleValue(), unit);
                 }
             }
-
-            if (json.has("fieldCentric") && json.get("fieldCentric").isBoolean()) {
-                this.withFieldCentric(json.get("fieldCentric").booleanValue());
-            }
         }
 
         public SwerveDrive build() {
@@ -855,7 +851,6 @@ public class SwerveDrive implements Sendable {
             this.maxTurnSpeed.ifPresent((double speed) -> swerveDrive.setMaxTurnSpeed(speed, RadiansPerSecond));
             this.maxDriveAccel.ifPresent((double accel) -> swerveDrive.setMaxDriveAccel(accel, MetersPerSecondPerSecond));
             this.maxTurnAccel.ifPresent((double accel) -> swerveDrive.setMaxTurnAccel(accel, RadiansPerSecond.per(Second)));
-            swerveDrive.setIsFieldCentric(this.fieldCentric);
         }
     }
 }

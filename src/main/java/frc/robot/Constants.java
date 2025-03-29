@@ -19,9 +19,9 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
-    public static final Transform2d kScoreRightOffset = new Transform2d(0.65,0.17, new Rotation2d(Math.PI)); //0.58, 0.17
-    public static final Transform2d kScoreLeftOffset = new Transform2d(0.65,-0.17, new Rotation2d(Math.PI)); 
-    public static final Transform2d kScoreCenterOffset = new Transform2d(0.5,0.0, new Rotation2d(Math.PI));
+    public static final Transform2d kScoreRightOffset = new Transform2d(0.65,0.17, Rotation2d.k180deg); //0.58, 0.17
+    public static final Transform2d kScoreLeftOffset = new Transform2d(0.65,-0.17, Rotation2d.k180deg); 
+    public static final Transform2d kScoreCenterOffset = new Transform2d(0.5,0.0, Rotation2d.k180deg);
     // TODO: Add constant for intial pose on blue side (red side will be accounted for with code)
   }
   public static class LEDConstants {
@@ -62,6 +62,7 @@ public final class Constants {
   public static class ClawConstants {
     public static final int kIntakeMotorID = 15; // TODO: update
     public static final double kIntakeVelocity = 0.3;
+    public static final double kScoreVelocity = 1;
     public static final int kLimitSwitchPort = 1;
   }
 

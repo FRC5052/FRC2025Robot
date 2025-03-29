@@ -33,6 +33,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDCommand;
@@ -93,7 +94,7 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
     public enum ElevatorLevel {
         Home(-0),
-        Intake(-10),
+        Intake(-10.25),
         L1(-15.19),
         L2(-27.71),
         L3(-47.09);
@@ -157,7 +158,7 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
         elevatorMotor.getEncoder().setPosition(0);
         feedback.setGoal(0.0);
         elevatorLevel = elevatorLevel.map((ElevatorLevel level) -> {
-            return ElevatorLevel.L2;
+            return ElevatorLevel.Home;
         });
     }
 
@@ -210,8 +211,8 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
     public void periodic() {
         // System.out.println(getMeasuredHeight());
         // System.out.println(feedforward.getKg() + " " + feedback.getP());
-        if(!bottomLimit.get()){
-            resetLevel();
+        if(DriverStation.isDisabled()){
+            setLevelSetpoint(ElevatorLevel.Home);
         }
 
         if (homed) {

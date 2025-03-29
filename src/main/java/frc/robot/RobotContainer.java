@@ -59,6 +59,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
@@ -136,12 +137,7 @@ public class RobotContainer {
     topSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDTopSlice[0], LEDConstants.kLEDTopSlice[1]-LEDConstants.kLEDTopSlice[0]);
     rightSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDRightSlice[0], LEDConstants.kLEDRightSlice[1]-LEDConstants.kLEDRightSlice[0], true);
 
-    this.m_swerveDriveSubsystem = new SwerveDriveSubsystem(
-      () -> this.m_driverController.getRawAxis(1), 
-      () -> this.m_driverController.getRawAxis(0), 
-      () -> -this.m_driverController.getRawAxis(2)
-    );
-    m_swerveDriveSubsystem.setFieldCentric(true);
+    this.m_swerveDriveSubsystem = new SwerveDriveSubsystem();
       
     this.m_elevatorSubsystem = new ElevatorSubsystem();
     // DO NOT DO THIS
@@ -166,23 +162,23 @@ public class RobotContainer {
     NamedCommands.registerCommand("L2", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L2)));
     NamedCommands.registerCommand("L3", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L3)));
     
-    NamedCommands.registerCommand("ClawScore", new InstantCommand(() -> {
-      m_clawSubsystem.scoreCoral();
+    NamedCommands.registerCommand("ScoreClaw", new InstantCommand(() -> {
+      m_clawSubsystem.score();
     }));
-    NamedCommands.registerCommand("ResetClaw", new InstantCommand(() -> {
-      m_clawSubsystem.resetIntake();
+    NamedCommands.registerCommand("StopClaw", new InstantCommand(() -> {
+      m_clawSubsystem.stop();
     }));
-    NamedCommands.registerCommand("IntakeCoral", new InstantCommand(() -> {
-      m_intakeSubsystem.intakeCoral();
+    NamedCommands.registerCommand("StartIntake", new InstantCommand(() -> {
+      m_intakeSubsystem.intake(false);
     }));
-    NamedCommands.registerCommand("ResetCoralIntake", new InstantCommand(() -> {
-      m_clawSubsystem.resetIntake();
+    NamedCommands.registerCommand("StopIntake", new InstantCommand(() -> {
+      m_intakeSubsystem.stop();
     }));
 
     this.autoChooser = AutoBuilder.buildAutoChooser();
     
 
-    Shuffleboard.getTab("Driver Panel").add("Intake Camera", CameraServer.startAutomaticCapture()).withSize(6, 5).withPosition(0, 0);
+    // Shuffleboard.getTab("Driver Panel").add("Intake Camera", CameraServer.startAutomaticCapture()).withSize(6, 5).withPosition(0, 0);
     Shuffleboard.getTab("Driver Panel").add("Auto Chooser", this.autoChooser).withSize(2, 1).withPosition(6, 0);
     
     configureBindings();
@@ -198,14 +194,36 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    
+    m_swerveDriveSubsystem.setDefaultCommand(new RunCommand(() -> {
+      double x = Math.pow(MathUtil.applyDeadband(m_driverController.getRawAxis(1), 0.25), 3);
+      double y = Math.pow(MathUtil.applyDeadband(m_driverController.getRawAxis(0), 0.2), 3);
+      double h = Math.pow(MathUtil.applyDeadband(m_driverController.getRawAxis(2), 0.40), 3);
+      // if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(Alliance.Red) && m_swerveDriveSubsystem.isFieldCentric()) {
+      //   x = -x;
+      //   y = -y;
+      // }
+      
+      // Normalize joystick vector.
+      if (Math.abs(x*x + y*y) > 1.0) {
+        double angle = Math.atan2(y, x);
+        x = Math.cos(angle);
+        y = Math.sin(angle);
+      }
+      m_swerveDriveSubsystem.getSwerveDrive().drive(
+        x, 
+        y, 
+        h,
+        HeadingControlMode.kSpeedOnly,
+        m_swerveDriveSubsystem.teleopIsFieldCentric()
+      );
+    }, m_swerveDriveSubsystem));
     // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
 
     // Reset Heading
-    m_driverController.button(3).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.resetHeading()));
+    // m_driverController.button(3).onTrue(new InstantCommand(() -> m_swerveDriveSubsystem.resetHeading()));
 
     // Auto-Align Left
     m_driverController.button(7).debounce(0.1).onTrue(
@@ -216,7 +234,7 @@ public class RobotContainer {
             Meter
           );
           targetPose.ifPresent((Pose2d pose) -> {
-            m_swerveDriveSubsystem.setTargetPose(pose);
+            m_swerveDriveSubsystem.createPathfindingCommand(pose).schedule();
             topSlice.setColor(0, 255, 0);
           });
       })
@@ -230,33 +248,35 @@ public class RobotContainer {
             Meter
           );
           targetPose.ifPresent((Pose2d pose) -> {
-            m_swerveDriveSubsystem.setTargetPose(pose);
+            m_swerveDriveSubsystem.createPathfindingCommand(pose).schedule();
             topSlice.setColor(0, 255, 0);
           });
       })
     );
 
     // Hold trigger for field centric
-    m_driverController.button(1).whileTrue(new Command() {
+    m_driverController.button(1).onTrue(new Command() {
       @Override
-      public void execute() {
-        m_swerveDriveSubsystem.setFieldCentric(false);
+      public void initialize() {
+        m_swerveDriveSubsystem.setTeleopIsFieldCentric(false);
       }
       @Override
       public void end(boolean interrupted) {
-        m_swerveDriveSubsystem.setFieldCentric(true);
+        m_swerveDriveSubsystem.setTeleopIsFieldCentric(true);
       }
     });
 
-    // Makes sure controller can't do anything during auton
-    Command secondControllerCommand = new Command() {
+    // Fine adjust forward
+    m_driverController.povUp().whileTrue(m_swerveDriveSubsystem.createFineAdjustCommand(-0.1, 0, 0, HeadingControlMode.kSpeedOnly));
 
-      @Override
-      public void execute() {
-        if (DriverStation.isAutonomousEnabled()) return;
-      }
-    };
-    secondControllerCommand.setName("Teleop Intake");
+    // Fine adjust backward
+    m_driverController.povDown().whileTrue(m_swerveDriveSubsystem.createFineAdjustCommand(0.1, 0, 0, HeadingControlMode.kSpeedOnly));
+
+    // Fine adjust right
+    m_driverController.povRight().whileTrue(m_swerveDriveSubsystem.createFineAdjustCommand(0, 0.1, 0, HeadingControlMode.kSpeedOnly));
+
+    // Fine adjust left
+    m_driverController.povLeft().whileTrue(m_swerveDriveSubsystem.createFineAdjustCommand(0, -0.1, 0, HeadingControlMode.kSpeedOnly));
 
     // Increase Elevator Level
     m_secondaryController.rightTrigger().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().next())));
@@ -305,12 +325,19 @@ public class RobotContainer {
     // When x pressed, release coral, when released, stop intake
     m_secondaryController.x().whileTrue(new StartEndCommand(
       () -> {
-        m_clawSubsystem.scoreCoral();
-        m_intakeSubsystem.intakeCoral();
+        var setpoint = m_elevatorSubsystem.getLevelSetpoint();
+        if (setpoint.isPresent()) {
+          if (setpoint.get() == ElevatorLevel.Intake) {
+            m_clawSubsystem.intake(false);
+            m_intakeSubsystem.intake(false);
+          } else {
+            m_clawSubsystem.score();
+          }
+        }
       }, 
       () -> {
-        m_clawSubsystem.resetIntake();
-        m_intakeSubsystem.resetIntake();
+        m_clawSubsystem.stop();
+        m_intakeSubsystem.stop();
       }, 
       m_clawSubsystem
     ));
@@ -318,12 +345,17 @@ public class RobotContainer {
     // When b pressed, intake coral, when released, stop intake
     m_secondaryController.b().whileTrue(new StartEndCommand(
       () -> {
-        m_clawSubsystem.intakeCoral();
-        m_intakeSubsystem.ejectCoral();
+        var setpoint = m_elevatorSubsystem.getLevelSetpoint();
+        if (setpoint.isPresent()) {
+          if (setpoint.get() == ElevatorLevel.Intake) {
+            m_clawSubsystem.intake(true);
+            m_intakeSubsystem.intake(true);
+          }
+        }
       }, 
       () -> {
-        m_clawSubsystem.resetIntake();
-        m_intakeSubsystem.resetIntake();
+        m_clawSubsystem.stop();
+        m_intakeSubsystem.stop();
       }, 
       m_clawSubsystem
     ));
@@ -417,8 +449,8 @@ public class RobotContainer {
       @Override
       public void initialize() {
           timer.start();
-          height = m_elevatorSubsystem.getMeasuredHeight();
-          setHeight = m_elevatorSubsystem.getHeightSetpoint();
+          height = -m_elevatorSubsystem.getMeasuredHeight();
+          setHeight = -m_elevatorSubsystem.getHeightSetpoint();
       }
 
       @Override
@@ -429,12 +461,12 @@ public class RobotContainer {
         } else {
           topSlice.setColor(0, 0, 0);
         }
-        if (m_elevatorSubsystem.getHeightSetpoint() < 0.5) {
+        if (-m_elevatorSubsystem.getHeightSetpoint() < 0.5) {
           leftSlice.setRainbow(timer);
           rightSlice.setRainbow(timer);
         } else {
-          height = m_elevatorSubsystem.getMeasuredHeight();
-          setHeight = m_elevatorSubsystem.getHeightSetpoint();
+          height = -m_elevatorSubsystem.getMeasuredHeight();
+          setHeight = -m_elevatorSubsystem.getHeightSetpoint();
           leftSlice.fill(Color.kBlack);
           rightSlice.fill(Color.kBlack);
           if (height <= setHeight) {
@@ -451,6 +483,10 @@ public class RobotContainer {
         }
         m_ledSubsystem.display();
       };
+
+      public boolean runsWhenDisabled() {
+        return true;
+      }
     };
     ledIdleCommand.addRequirements(m_ledSubsystem);
     m_ledSubsystem.setDefaultCommand(ledIdleCommand);

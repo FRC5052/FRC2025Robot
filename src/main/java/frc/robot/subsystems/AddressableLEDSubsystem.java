@@ -65,7 +65,7 @@ public class AddressableLEDSubsystem extends SubsystemBase {
       this.reversed = b;
     }
 
-    public boolean getReversed() {
+    public boolean isReversed() {
       return this.reversed;
     }
 

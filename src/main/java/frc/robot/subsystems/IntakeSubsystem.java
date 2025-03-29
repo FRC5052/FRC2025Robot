@@ -49,21 +49,14 @@ public class IntakeSubsystem extends SubsystemBase {
         return this.intakeMotor.get();
     }
 
-    public void intakeCoral() {
+    public void intake(boolean reverse) {
         // TODO Remove the short circuit (|| true)
         if(!intakeLimit.get() || true) {
-            setIntakeVelocity(IntakeConstants.kIntakeVelocity);
+            setIntakeVelocity(reverse ? -IntakeConstants.kIntakeVelocity : IntakeConstants.kIntakeVelocity);
         }
     }
 
-    public void ejectCoral() {
-        // TODO Remove the short circuit (|| true)
-        if(intakeLimit.get() || true) {
-            setIntakeVelocity(-IntakeConstants.kIntakeVelocity);
-        }
-    }
-
-    public void resetIntake() {
+    public void stop() {
         intakeMotor.stopMotor();
     }
 }

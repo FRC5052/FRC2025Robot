@@ -95,7 +95,7 @@ public abstract class SwerveIMU {
      * Sets the heading offset to the raw heading reported by this IMU. 
      * The heading returned by {@link #getHeading(AngleUnit)} is guaranteed to be zero after this call.
      */
-    public abstract void zeroHeading();
+    public abstract void resetHeading();
 
     /**
      * Gets this IMU's configured heading offset.
@@ -186,7 +186,7 @@ public abstract class SwerveIMU {
         }
 
         @Override
-        public void zeroHeading() {
+        public void resetHeading() {
             this.setHeadingOffset(this.getRawHeading(Radians), Radians);
         }
 

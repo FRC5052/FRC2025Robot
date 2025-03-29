@@ -30,12 +30,12 @@ public class SwerveModule implements Sendable {
     private final double driveGearRatio, pivotGearRatio;
     private final double wheelDiameter;
     private boolean optimize = true;
-    private SwerveModuleState state = new SwerveModuleState(0, Rotation2d.fromDegrees(0));
-    private SwerveModuleState actualState = new SwerveModuleState(0, Rotation2d.fromDegrees(0));
+    private SwerveModuleState state = new SwerveModuleState(0, Rotation2d.kZero);
+    private SwerveModuleState actualState = new SwerveModuleState(0, Rotation2d.kZero);
     private SwerveModulePosition actualPosition = new SwerveModulePosition();
     private SwerveModulePosition actualDeltaPosition = new SwerveModulePosition();
 
-    private Rotation2d actualAngle = new Rotation2d();
+    private Rotation2d actualAngle = Rotation2d.kZero;
 
     public static Builder builder() {
         return new Builder();

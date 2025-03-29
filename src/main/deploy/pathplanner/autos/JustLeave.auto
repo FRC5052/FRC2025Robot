@@ -9,37 +9,6 @@
           "data": {
             "pathName": "JustLeave"
           }
-        },
-        {
-          "type": "sequential",
-          "data": {
-            "commands": [
-              {
-                "type": "wait",
-                "data": {
-                  "waitTime": 0.1
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "ScoreCoral"
-                }
-              },
-              {
-                "type": "wait",
-                "data": {
-                  "waitTime": 0.5
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "ResetCoralIntake"
-                }
-              }
-            ]
-          }
         }
       ]
     }
