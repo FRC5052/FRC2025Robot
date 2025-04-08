@@ -158,7 +158,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   }
 
   public void resetHeading() {
-    this.swerveDrive.zeroHeading();
+    // this.swerveDrive.zeroHeading();
     // this.swerveDrive.overridePosition(new Pose2d());
   }
 
@@ -181,6 +181,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   }
 
   public void setTeleopIsFieldCentric(boolean fieldCentric) {
+    System.out.println("FieldCentric = " + fieldCentric);
     this.teleopIsFieldCentric = fieldCentric;
   }
 

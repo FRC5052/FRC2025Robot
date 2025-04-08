@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.RPM;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.Second;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 import com.revrobotics.spark.SparkClosedLoopController;
@@ -94,10 +95,9 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
     public enum ElevatorLevel {
         Home(-0),
-        Intake(-10.25),
-        L1(-15.19),
-        L2(-27.71),
-        L3(-47.09);
+        Intake(-10.25), // Original: -10.25
+        L2(-27.71), // Original: -27.71
+        L3(-30.09); // Original: -47.09
 
         private double level;
 
@@ -114,8 +114,6 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
                 case Home:
                     return Intake;
                 case Intake:
-                    return L1;
-                case L1:
                     return L2;
                 case L2:
                     return L3;
@@ -132,10 +130,8 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
                     return Home;
                 case Intake:
                     return Home;
-                case L1:
-                    return Intake;
                 case L2:
-                    return L1;
+                    return Intake;
                 case L3:
                     return L2;
                 default:
@@ -151,7 +147,7 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
     public void setHeightSetpoint(double height) {
         elevatorLevel = Optional.empty();
-        feedback.setGoal(MathUtil.clamp(height, -Constants.ElevatorConstants.top, 0.0));
+        feedback.setGoal(MathUtil.clamp(height, Constants.ElevatorConstants.top, 0.0));
     }
 
     public void resetLevel() {
@@ -164,6 +160,26 @@ public class ElevatorSubsystem extends SubsystemBase implements Sendable {
 
     public Optional<ElevatorLevel> getLevelSetpoint() {
         return elevatorLevel;
+    }
+
+    public ElevatorLevel getLevelSetpointOrRound() {
+        var values = ElevatorLevel.values();
+        double setpoint = getHeightSetpoint();
+        for (int i = 1; i < values.length; i++) {
+            if (values[i-1].level >= setpoint && values[i].level <= setpoint) {
+                double prevDist = Math.abs(values[i-1].level - setpoint);
+                double nextDist = Math.abs(values[i].level - setpoint);
+
+                if (prevDist < nextDist) {
+                    return values[i-1];
+                } else {
+                    return values[i];
+                }
+            }
+        }
+        if (setpoint < values[values.length-1].level) return values[values.length-1];
+        else if (setpoint > values[0].level) return values[0];
+        return null;
     }
 
     public double getHeightSetpoint() {

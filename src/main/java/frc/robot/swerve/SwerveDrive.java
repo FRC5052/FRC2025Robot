@@ -617,7 +617,7 @@ public class SwerveDrive implements Sendable {
             ), this.speeds.omegaRadiansPerSecond, Robot.kDefaultPeriod, this.maxTurnSpeed, this.maxTurnAccel)
         );
 
-        if (this.fieldCentricTargetSpeeds && DriverStation.getAlliance().isPresent()) {
+        if (this.fieldCentricTargetSpeeds) {
             if (DriverStation.getAlliance().get() == Alliance.Blue) {
                 this.wheelStates = this.kinematics.toSwerveModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(this.speeds, this.pose.getRotation()));
             } else {

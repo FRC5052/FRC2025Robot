@@ -36,7 +36,7 @@ public final class Constants {
     public static final int kElevatorMotorID = 13;
     public static final int kFollowerMotorID = 14;
     // PID Constants
-    public static final double kP = 0.25;
+    public static final double kP = 0.35; // 0.25;
     public static final double kI = 0;
     public static final double kD = 0;
     // Feedforward Constants

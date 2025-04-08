@@ -110,6 +110,7 @@ public class RobotContainer {
   private AddressableLEDSlice leftSlice;
   private AddressableLEDSlice topSlice;
   private AddressableLEDSlice rightSlice;
+
   // public final ColorSensorSubsystem m_colorSensorSubsystem;
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
@@ -137,6 +138,7 @@ public class RobotContainer {
     topSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDTopSlice[0], LEDConstants.kLEDTopSlice[1]-LEDConstants.kLEDTopSlice[0]);
     rightSlice = m_ledSubsystem.createSlice(LEDConstants.kLEDRightSlice[0], LEDConstants.kLEDRightSlice[1]-LEDConstants.kLEDRightSlice[0], true);
 
+
     this.m_swerveDriveSubsystem = new SwerveDriveSubsystem();
       
     this.m_elevatorSubsystem = new ElevatorSubsystem();
@@ -158,7 +160,6 @@ public class RobotContainer {
 
     NamedCommands.registerCommand("Home", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.Home)));
     NamedCommands.registerCommand("Intake", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.Intake)));
-    NamedCommands.registerCommand("L1", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L1)));
     NamedCommands.registerCommand("L2", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L2)));
     NamedCommands.registerCommand("L3", new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(ElevatorLevel.L3)));
     
@@ -255,16 +256,10 @@ public class RobotContainer {
     );
 
     // Hold trigger for field centric
-    m_driverController.button(1).onTrue(new Command() {
-      @Override
-      public void initialize() {
-        m_swerveDriveSubsystem.setTeleopIsFieldCentric(false);
-      }
-      @Override
-      public void end(boolean interrupted) {
-        m_swerveDriveSubsystem.setTeleopIsFieldCentric(true);
-      }
-    });
+    m_driverController.button(1).whileTrue(new StartEndCommand(
+        () -> m_swerveDriveSubsystem.setTeleopIsFieldCentric(false),
+        () -> m_swerveDriveSubsystem.setTeleopIsFieldCentric(true)
+    ));
 
     // Fine adjust forward
     m_driverController.povUp().whileTrue(m_swerveDriveSubsystem.createFineAdjustCommand(-0.1, 0, 0, HeadingControlMode.kSpeedOnly));
@@ -279,10 +274,20 @@ public class RobotContainer {
     m_driverController.povLeft().whileTrue(m_swerveDriveSubsystem.createFineAdjustCommand(0, -0.1, 0, HeadingControlMode.kSpeedOnly));
 
     // Increase Elevator Level
-    m_secondaryController.rightTrigger().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().next())));
+    m_secondaryController.rightBumper().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpointOrRound().next())));
 
     // Decrease Elevator Level
-    m_secondaryController.leftTrigger().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpoint().get().prev())));
+    m_secondaryController.leftBumper().onTrue(new InstantCommand(() -> m_elevatorSubsystem.setLevelSetpoint(m_elevatorSubsystem.getLevelSetpointOrRound().prev())));
+
+    m_secondaryController.rightTrigger(0.1).whileTrue(new RunCommand(() -> {
+      double axisValue = m_secondaryController.getRightTriggerAxis();
+      m_elevatorSubsystem.setHeightSetpoint(m_elevatorSubsystem.getHeightSetpoint()-(axisValue*0.2));
+    }));
+
+    m_secondaryController.leftTrigger(0.1).whileTrue(new RunCommand(() -> {
+      double axisValue = m_secondaryController.getLeftTriggerAxis();
+      m_elevatorSubsystem.setHeightSetpoint(m_elevatorSubsystem.getHeightSetpoint()+(axisValue*0.2));
+    }));
 
     // // When y pushed, switch to manual mode and move up
     // m_secondaryController.y().whileTrue(new StartEndCommand(
@@ -325,14 +330,12 @@ public class RobotContainer {
     // When x pressed, release coral, when released, stop intake
     m_secondaryController.x().whileTrue(new StartEndCommand(
       () -> {
-        var setpoint = m_elevatorSubsystem.getLevelSetpoint();
-        if (setpoint.isPresent()) {
-          if (setpoint.get() == ElevatorLevel.Intake) {
-            m_clawSubsystem.intake(false);
-            m_intakeSubsystem.intake(false);
-          } else {
-            m_clawSubsystem.score();
-          }
+        var setpoint = m_elevatorSubsystem.getLevelSetpointOrRound();
+        if (setpoint == ElevatorLevel.Intake) {
+          m_clawSubsystem.intake(false);
+          m_intakeSubsystem.intake(false);
+        } else {
+          m_clawSubsystem.score();
         }
       }, 
       () -> {
@@ -345,12 +348,10 @@ public class RobotContainer {
     // When b pressed, intake coral, when released, stop intake
     m_secondaryController.b().whileTrue(new StartEndCommand(
       () -> {
-        var setpoint = m_elevatorSubsystem.getLevelSetpoint();
-        if (setpoint.isPresent()) {
-          if (setpoint.get() == ElevatorLevel.Intake) {
-            m_clawSubsystem.intake(true);
-            m_intakeSubsystem.intake(true);
-          }
+        var setpoint = m_elevatorSubsystem.getLevelSetpointOrRound();
+        if (setpoint == ElevatorLevel.Intake) {
+          m_clawSubsystem.intake(true);
+          m_intakeSubsystem.intake(true);
         }
       }, 
       () -> {
@@ -470,15 +471,15 @@ public class RobotContainer {
           leftSlice.fill(Color.kBlack);
           rightSlice.fill(Color.kBlack);
           if (height <= setHeight) {
-            leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kOrange, null);
-            leftSlice.setMeter(ElevatorConstants.top, height, Color.kRed, null);
-            rightSlice.setMeter(ElevatorConstants.top, setHeight, Color.kOrange, null);
-            rightSlice.setMeter(ElevatorConstants.top, height, Color.kRed, null);
+            leftSlice.setMeter(-ElevatorConstants.top, setHeight, Color.kOrange, null);
+            leftSlice.setMeter(-ElevatorConstants.top, height, Color.kRed, null);
+            rightSlice.setMeter(-ElevatorConstants.top, setHeight, Color.kOrange, null);
+            rightSlice.setMeter(-ElevatorConstants.top, height, Color.kRed, null);
           } else {
-            leftSlice.setMeter(ElevatorConstants.top, height, Color.kOrange, null);
-            leftSlice.setMeter(ElevatorConstants.top, setHeight, Color.kRed, null);
-            rightSlice.setMeter(ElevatorConstants.top, height, Color.kOrange, null);
-            rightSlice.setMeter(ElevatorConstants.top, setHeight, Color.kRed, null);
+            leftSlice.setMeter(-ElevatorConstants.top, height, Color.kOrange, null);
+            leftSlice.setMeter(-ElevatorConstants.top, setHeight, Color.kRed, null);
+            rightSlice.setMeter(-ElevatorConstants.top, height, Color.kOrange, null);
+            rightSlice.setMeter(-ElevatorConstants.top, setHeight, Color.kRed, null);
           }
         }
         m_ledSubsystem.display();

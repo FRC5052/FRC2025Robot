@@ -143,7 +143,7 @@ public class Limelight {
             Optional<Pose3d> tagPose = field.getTagPose(getTargetID().orElse(-1));
             Optional<Pose2d> targetPose = isValidScoreTag(getTargetID()) && tagPose.isPresent() ? Optional.of(tagPose.get().toPose2d().plus(offset)) : Optional.empty();
             if (targetPose.isEmpty()) {
-                System.out.println("No target pose detected");
+                // System.out.println("No target pose detected");
             }
             return targetPose;
         } else {

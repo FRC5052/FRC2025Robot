@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "JustLeave"
+            "pathName": "Align_BackRight"
           }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "Align",
   "choreoAuto": false
 }

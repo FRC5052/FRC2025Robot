@@ -84,19 +84,12 @@ public class AddressableLEDSubsystem extends SubsystemBase {
     
     public void setFunc(DoubleFunction<Color> func, int startOffset, int endOffset) {
       if (startOffset>length || endOffset > length) { return; }
-      if (!reversed) {
-        for (int i = offset+startOffset; i < length+offset-endOffset; i++) {
-          double value = (((double)(i-offset))/(double)length);
-          if (func.apply(value)!=null) {
-            parent.set(i, func.apply(value));
-          }
-        }
-      } else {
-        for (int i = length+offset-endOffset-1; i >= offset+startOffset; i--) {
-          double value = (((double)(i-offset))/(double)length);
-          if (func.apply(value)!=null) {
-            parent.set(i, func.apply(value));
-          }
+      for (int i = offset+startOffset; i < length+offset-endOffset; i++) {
+        double value = (((double)(i-offset))/(double)length);
+        if (reversed) value = 1.0 - value;
+        Color color = func.apply(value);
+        if (color != null) {
+          parent.set(i, color);
         }
       }
     }

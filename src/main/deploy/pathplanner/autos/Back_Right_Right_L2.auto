@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Back_Left_Left_L2"
+            "pathName": "Back_Right_Right_L2"
           }
         },
         {
@@ -32,6 +32,12 @@
           "type": "named",
           "data": {
             "name": "StopClaw"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Back_Left_Left_Source"
           }
         }
       ]
